@@ -477,19 +477,33 @@
 }
 
 // ── Responsive ───────────────────────────────────────────────
-@media (max-width: 900px) {
-  .content-grid { grid-template-columns: 1fr; }
-  .col-left { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+
+// Tablet
+@media (max-width: 1024px) {
+  .main { padding: 1.5rem 1.5rem 3rem; }
+  .content-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+  .col-left {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;
+  }
   .cat-card { margin-top: 0; }
   .bottom-grid { grid-template-columns: 1fr; }
+  .total-amount { font-size: 2.5rem; }
 }
 
-@media (max-width: 600px) {
-  .main { padding: 1.5rem 1rem 3rem; }
+// Mobile
+@media (max-width: 640px) {
+  .main { padding: 1rem 1rem 3rem; }
   .col-left { grid-template-columns: 1fr; }
-  .top-nav { padding: 0 1rem; }
-  .nav-brand { font-size: 1rem; }
   .total-amount { font-size: 2rem; }
+  .total-card { padding: 1.25rem; }
+  .cat-card { padding: 1.25rem; }
+  .txn-card { padding: 1.25rem; }
+  .txn-row { flex-wrap: wrap; gap: .5rem; }
+  .txn-info { min-width: 0; }
+  .txn-amount-col { margin-left: auto; }
+  .txn-actions { width: 100%; justify-content: flex-end; opacity: 1; }
+  .pagination { flex-wrap: wrap; justify-content: center; }
+  .btn-new-expense { font-size: .85rem; padding: .75rem; }
 }
 
 // ── Date filter tabs ─────────────────────────────────────────
