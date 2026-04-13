@@ -3,11 +3,16 @@ const router  = express.Router();
 const db      = require('../../config/db');
 const { err500 } = require('../../utils/errors');
 const multer  = require('multer');
-const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 
-const upload   = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+
+// Supabase Storage is optional — only used for receipt uploads
+let supabase = null;
+if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+  const { createClient } = require('@supabase/supabase-js');
+  supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+}
 
 const EXPENSE_SELECT = `
   SELECT e.*,
@@ -348,6 +353,7 @@ router.delete('/:id', async (req, res) => {
 
 // POST /api/spending/expenses/:id/receipt
 router.post('/:id/receipt', upload.single('file'), async (req, res) => {
+  if (!supabase) return res.status(501).json({ error: 'Storage not configured. Set SUPABASE_URL and SUPABASE_ANON_KEY.' });
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
   const isPdf = req.file.mimetype === 'application/pdf';
   const path  = `receipts/${req.params.id}.${isPdf ? 'pdf' : 'jpg'}`;
