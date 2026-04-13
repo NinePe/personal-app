@@ -98,7 +98,10 @@
       "Bash(git commit -m 'Fix trust proxy + add DB config debug log:*)",
       "Bash(git commit -m 'Switch root Dockerfile to frontend build:*)",
       "Bash(git commit -m 'Responsive nav: scrollable on tablet, pill-chips on mobile:*)",
-      "Bash(git commit -m 'Responsive expenses dashboard: tablet 2-col, mobile 1-col:*)"
+      "Bash(git commit -m 'Responsive expenses dashboard: tablet 2-col, mobile 1-col:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:4200/)",
+      "Bash(curl -s http://localhost:4200/expenses)",
+      "Bash(git commit -m 'Responsive nav via shared SCSS partial — works inside Angular encapsulation:*)"
     ]
   }
 }
