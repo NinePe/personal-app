@@ -96,7 +96,8 @@
       "Bash(curl -F \"file=@/tmp/personal-app-dump.sql.gz\" https://0x0.st)",
       "Bash(git commit -m 'Remove temporary DB dump:*)",
       "Bash(git commit -m 'Fix trust proxy + add DB config debug log:*)",
-      "Bash(git commit -m 'Switch root Dockerfile to frontend build:*)"
+      "Bash(git commit -m 'Switch root Dockerfile to frontend build:*)",
+      "Bash(git commit -m 'Responsive nav: scrollable on tablet, pill-chips on mobile:*)"
     ]
   }
 }
