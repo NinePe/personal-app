@@ -1,0 +1,230 @@
+<div class="page">
+  <div class="orb orb--tr"></div>
+
+  <!-- ── Nav ─────────────────────────────────────── -->
+  <nav class="top-nav">
+    <div class="nav-left">
+      <a class="nav-back" routerLink="/" title="Back to home"><span class="material-symbols-outlined">arrow_back</span></a>
+      <span class="nav-brand">Spending</span>
+      <div class="nav-links">
+        <a class="nav-link" routerLink="/income">Income</a>
+        <a class="nav-link" routerLink="/expenses">Expenses</a>
+        <a class="nav-link" routerLink="/payments">Payments</a>
+        <a class="nav-link" routerLink="/people">People</a>
+        <a class="nav-link nav-link--active" routerLink="/loans">Loans</a>
+        <a class="nav-link" routerLink="/places">Places</a>
+        <a class="nav-link" routerLink="/budget">Budget</a>
+        <a class="nav-link" routerLink="/projections">Projections</a>
+      </div>
+    </div>
+    <div class="nav-right">
+      <a class="btn-add-income" routerLink="/new-income">
+        <span class="material-symbols-outlined">add</span>
+        Add Income
+      </a>
+      <a class="btn-add-expense" routerLink="/spending">
+        <span class="material-symbols-outlined">add</span>
+        Add Expense
+      </a>
+      <span class="material-symbols-outlined nav-icon">notifications</span>
+      <span class="material-symbols-outlined nav-icon">account_circle</span>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <header class="page-header">
+      <h1 class="page-title">{{ isEdit() ? 'Edit Transaction' : 'New Transaction' }}</h1>
+      <p class="page-sub">Log a new flow of wealth in your personal ledger.</p>
+    </header>
+
+    <div class="layout">
+
+      <!-- ── LEFT COLUMN — form ───────────────────── -->
+      <section class="form-card">
+
+        <!-- Direction toggle -->
+        <div class="field-group">
+          <label class="field-label">Transaction Type</label>
+          <div class="dir-toggle">
+            <button class="dir-btn" [class.active]="direction() === 'i_lent'"
+                    (click)="setDirection('i_lent')">
+              <span class="material-symbols-outlined">trending_up</span>
+              I lent money
+            </button>
+            <button class="dir-btn" [class.active]="direction() === 'i_borrowed'"
+                    (click)="setDirection('i_borrowed')">
+              <span class="material-symbols-outlined">trending_down</span>
+              I borrowed money
+            </button>
+          </div>
+        </div>
+
+        <!-- Amount -->
+        <div class="field-group">
+          <label class="field-label">Principal Amount</label>
+          <div class="amount-wrap">
+            <span class="amount-prefix">$</span>
+            <input class="amount-input" type="number" step="0.01" min="0" placeholder="0.00"
+                   [value]="amount() ?? ''"
+                   (input)="setAmount($any($event.target).value)" />
+          </div>
+        </div>
+
+        <!-- Person selection -->
+        <div class="field-group">
+          <label class="field-label">Recipient / Sender</label>
+          <input class="search-input" type="text" placeholder="Search people…"
+                 [value]="personQuery()"
+                 (input)="personQuery.set($any($event.target).value)" />
+
+          @if (loading()) {
+            <div class="person-grid">
+              @for (_ of [1,2,3,4,5]; track $index) {
+                <div class="person-chip person-chip--skel"></div>
+              }
+            </div>
+          } @else if (!filteredPeople().length) {
+            <div class="empty-hint">
+              No people match. <a routerLink="/new-person">Create one →</a>
+            </div>
+          } @else {
+            <div class="person-grid">
+              @for (p of filteredPeople(); track p.id) {
+                <button class="person-chip" [class.selected]="personId() === p.id"
+                        (click)="selectPerson(p)">
+                  @if (p.avatar_url) {
+                    <img class="chip-avatar" [src]="p.avatar_url" [alt]="p.name" />
+                  } @else {
+                    <div class="chip-avatar chip-avatar--initials">{{ initial(p.name) }}</div>
+                  }
+                  <span class="chip-name">{{ p.name }}</span>
+                </button>
+              }
+              <a class="person-chip person-chip--new" routerLink="/new-person">
+                <div class="chip-avatar chip-avatar--new">
+                  <span class="material-symbols-outlined">add</span>
+                </div>
+                <span class="chip-name">New</span>
+              </a>
+            </div>
+          }
+        </div>
+
+        <!-- Date + card -->
+        <div class="row-2">
+          <div class="field-group">
+            <label class="field-label">Transaction Date</label>
+            <div class="date-wrap">
+              <input class="date-input" type="date"
+                     [value]="transactionDate()"
+                     (change)="transactionDate.set($any($event.target).value)" />
+              <span class="material-symbols-outlined date-icon">calendar_today</span>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Payment Method (optional)</label>
+            <select class="select-input"
+                    [value]="cardId() ?? ''"
+                    (change)="cardId.set($any($event.target).value || null)">
+              <option value="">— None —</option>
+              @for (c of cards(); track c.id) {
+                <option [value]="c.id">{{ c.name }} · **** {{ c.last_four }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="field-group">
+          <label class="field-label">Notes / Description</label>
+          <textarea class="textarea" rows="3"
+                    placeholder="What is this transaction for?"
+                    [value]="description()"
+                    (input)="description.set($any($event.target).value)"></textarea>
+        </div>
+
+      </section>
+
+      <!-- ── RIGHT COLUMN — summary + CTA ─────────── -->
+      <aside class="summary-col">
+
+        <!-- Person preview card -->
+        @if (selectedPerson(); as person) {
+          <div class="preview-card" [class.preview-card--lent]="direction() === 'i_lent'"
+                                    [class.preview-card--borrowed]="direction() === 'i_borrowed'">
+            <div class="preview-avatar-wrap">
+              @if (person.avatar_url) {
+                <img class="preview-avatar" [src]="person.avatar_url" [alt]="person.name" />
+              } @else {
+                <div class="preview-avatar preview-avatar--initials">{{ initial(person.name) }}</div>
+              }
+            </div>
+            <p class="preview-label">
+              {{ direction() === 'i_lent' ? 'Lending to' : 'Borrowing from' }}
+            </p>
+            <h3 class="preview-name">{{ person.name }}</h3>
+            <p class="preview-amount">{{ fmt(amount() ?? 0) }}</p>
+
+            <div class="preview-meta">
+              <div class="preview-row">
+                <span class="preview-row__label">Current balance</span>
+                <span class="preview-row__value"
+                      [class.val-pos]="currentBalance() > 0"
+                      [class.val-neg]="currentBalance() < 0">
+                  @if (currentBalance() === 0) { Settled }
+                  @else if (currentBalance() > 0) { They owe {{ fmt(currentBalance()) }} }
+                  @else { You owe {{ fmt(currentBalance()) }} }
+                </span>
+              </div>
+              <div class="preview-row">
+                <span class="preview-row__label">After this tx</span>
+                <span class="preview-row__value"
+                      [class.val-pos]="projectedBalance() > 0"
+                      [class.val-neg]="projectedBalance() < 0">
+                  @if (projectedBalance() === 0) { Settled }
+                  @else if (projectedBalance() > 0) { They owe {{ fmt(projectedBalance()) }} }
+                  @else { You owe {{ fmt(projectedBalance()) }} }
+                </span>
+              </div>
+            </div>
+
+            @if (isMicropayment()) {
+              <div class="micropayment-hint">
+                <span class="material-symbols-outlined">bolt</span>
+                <p>
+                  This is a <b>micropayment</b>. It will reduce the existing balance with
+                  {{ person.name }}.
+                </p>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="preview-card preview-card--empty">
+            <div class="preview-avatar-wrap">
+              <div class="preview-avatar preview-avatar--empty">
+                <span class="material-symbols-outlined">person</span>
+              </div>
+            </div>
+            <p class="preview-label">Pick a person</p>
+            <p class="preview-hint">Select who this transaction is with.</p>
+          </div>
+        }
+
+        <!-- Save button -->
+        <button class="save-btn" [disabled]="!canSave() || saving()" (click)="save()">
+          @if (saving()) { Saving… }
+          @else { {{ isEdit() ? 'Update Transaction' : 'Confirm Transaction' }} }
+          <span class="material-symbols-outlined">arrow_forward</span>
+        </button>
+
+        @if (error()) {
+          <p class="save-error">{{ error() }}</p>
+        }
+        <p class="save-hint">Peer-to-peer ledger entry · saved locally</p>
+      </aside>
+
+    </div>
+  </main>
+</div>

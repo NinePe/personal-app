@@ -1,0 +1,196 @@
+<div class="page">
+  <div class="orb orb--tr"></div>
+
+  <!-- ── Nav ─────────────────────────────────────── -->
+  <nav class="top-nav">
+    <div class="nav-left">
+      <a class="nav-back" routerLink="/reading" title="Back to library">
+        <span class="material-symbols-outlined">arrow_back</span>
+      </a>
+      <span class="nav-brand">Reading</span>
+      <div class="nav-links">
+        <a class="nav-link" routerLink="/reading">Library</a>
+        <a class="nav-link" routerLink="/reading/authors">Authors</a>
+        <a class="nav-link nav-link--active" routerLink="/reading/sagas">Sagas</a>
+        <a class="nav-link" routerLink="/reading/genres">Genres</a>
+      </div>
+    </div>
+    <div class="nav-right">
+      <button class="btn-primary" (click)="openNew()">
+        <span class="material-symbols-outlined">add</span>
+        New Saga
+      </button>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <header class="page-header">
+      <div>
+        <span class="eyebrow">Masters</span>
+        <h1 class="page-title">Sagas</h1>
+        <p class="page-sub">Track book series and their ordered volumes.</p>
+      </div>
+      <div class="header-stats">
+        <div class="stat-chip">
+          <span class="stat-num">{{ sagas().length }}</span>
+          <span class="stat-label">Sagas</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-num">{{ totalBooks() }}</span>
+          <span class="stat-label">Volumes</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="search-bar">
+      <span class="material-symbols-outlined">search</span>
+      <input type="text" placeholder="Search sagas…"
+             [value]="query()"
+             (input)="query.set($any($event.target).value)" />
+    </div>
+
+    @if (loading()) {
+      <div class="saga-list">
+        @for (_ of [1,2,3,4]; track $index) {
+          <div class="skeleton-card"></div>
+        }
+      </div>
+    } @else if (!filtered().length) {
+      <div class="empty-state">
+        <span class="material-symbols-outlined">collections_bookmark</span>
+        <h3>{{ query() ? 'No sagas match your search' : 'No sagas yet' }}</h3>
+        <p>{{ query() ? 'Try a different keyword.' : 'Add your first saga or create one from a book form.' }}</p>
+        @if (!query()) {
+          <button class="btn-primary" (click)="openNew()">
+            <span class="material-symbols-outlined">add</span>
+            Create saga
+          </button>
+        }
+      </div>
+    } @else {
+      <div class="saga-list">
+        @for (s of filtered(); track s.id) {
+          <div class="saga-card" (click)="openDetail(s)">
+            <div class="saga-icon">
+              <span class="material-symbols-outlined">auto_stories</span>
+            </div>
+            <div class="saga-body">
+              <h3 class="saga-name">{{ s.name }}</h3>
+              @if (s.description) {
+                <p class="saga-desc">{{ s.description }}</p>
+              }
+              <div class="saga-footer">
+                <span class="saga-count">
+                  <span class="material-symbols-outlined">bookmark</span>
+                  {{ s.book_count ?? 0 }} {{ s.book_count === 1 ? 'volume' : 'volumes' }}
+                </span>
+              </div>
+            </div>
+            <div class="card-actions">
+              <button class="card-btn" (click)="openEdit(s, $event)" title="Edit">
+                <span class="material-symbols-outlined">edit</span>
+              </button>
+              <button class="card-btn card-btn--del" (click)="delete(s, $event)" title="Delete">
+                <span class="material-symbols-outlined">delete</span>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </main>
+
+  <!-- ── Form modal ─────────────────────────────── -->
+  @if (showForm()) {
+    <div class="modal-backdrop" (click)="closeForm()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-head">
+          <h3>{{ editingId() ? 'Edit Saga' : 'New Saga' }}</h3>
+          <button class="modal-close" (click)="closeForm()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="field">
+            <label class="field-label">Name *</label>
+            <input class="input" type="text" placeholder="The Stormlight Archive" autofocus
+                   [value]="formName()"
+                   (input)="formName.set($any($event.target).value)" />
+          </div>
+          <div class="field">
+            <label class="field-label">Description</label>
+            <textarea class="textarea" rows="3" placeholder="Optional description…"
+                      [value]="formDesc()"
+                      (input)="formDesc.set($any($event.target).value)"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" (click)="closeForm()">Cancel</button>
+          <button class="btn-confirm" [disabled]="saving() || !formName().trim()" (click)="save()">
+            {{ saving() ? 'Saving…' : (editingId() ? 'Save changes' : 'Create saga') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ── Detail drawer ──────────────────────────── -->
+  @if (detailSaga(); as sg) {
+    <div class="modal-backdrop" (click)="closeDetail()">
+      <div class="drawer" (click)="$event.stopPropagation()">
+        <div class="drawer-head">
+          <div class="drawer-head-info">
+            <div class="drawer-icon">
+              <span class="material-symbols-outlined">auto_stories</span>
+            </div>
+            <div>
+              <h2>{{ sg.name }}</h2>
+              <p>{{ sg.book_count ?? 0 }} {{ sg.book_count === 1 ? 'volume' : 'volumes' }} in library</p>
+            </div>
+          </div>
+          <button class="modal-close" (click)="closeDetail()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        @if (sg.description) {
+          <div class="drawer-notes">{{ sg.description }}</div>
+        }
+
+        <div class="drawer-body">
+          @if (detailLoading()) {
+            <div class="skeleton-list">
+              @for (_ of [1,2,3]; track $index) { <div class="skeleton-row"></div> }
+            </div>
+          } @else if (!detailBooks().length) {
+            <p class="drawer-empty">No volumes in this saga yet.</p>
+          } @else {
+            <div class="volume-list">
+              @for (b of detailBooks(); track b.id) {
+                <a class="volume-row" [routerLink]="['/reading/new-book', b.id]">
+                  <div class="volume-num">
+                    @if (b.saga_volume) { #{{ b.saga_volume }} }
+                    @else { — }
+                  </div>
+                  <div class="volume-cover">
+                    @if (b.cover_url) {
+                      <img [src]="b.cover_url" [alt]="b.title" />
+                    } @else {
+                      <span class="material-symbols-outlined">auto_stories</span>
+                    }
+                  </div>
+                  <div class="volume-info">
+                    <p class="volume-title">{{ b.title }}</p>
+                    <p class="volume-sub">{{ authorNames(b) }}</p>
+                  </div>
+                  <span class="volume-status">{{ b.status }}</span>
+                </a>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

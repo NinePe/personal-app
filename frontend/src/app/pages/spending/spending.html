@@ -1,0 +1,326 @@
+<div class="page">
+  <!-- Decorative orbs -->
+  <div class="orb orb--tr"></div>
+  <div class="orb orb--ml"></div>
+
+  <main class="main">
+
+    <!-- ── Header ─────────────────────────────── -->
+    <header class="page-header">
+      <h1 class="page-title">{{ isEdit() ? 'Edit Expense' : 'New Expense' }}</h1>
+      <p class="page-subtitle">{{ isEdit() ? 'Update this expense entry.' : 'Log your spending and keep your financial flow balanced.' }}</p>
+    </header>
+
+    <!-- ── Form card ──────────────────────────── -->
+    <section class="form-card">
+      <div class="form-inner">
+
+        <!-- ── Row 1: Amount + Payment Method ─── -->
+        <div class="row-grid">
+
+          <!-- Amount -->
+          <div class="field-group">
+            <label class="field-label">Amount</label>
+            <div class="amount-box">
+              <span class="amount-currency">$</span>
+              <input class="amount-input" type="number" placeholder="0.00" step="0.01"
+                     [value]="amount()"
+                     (input)="onAmountInput($any($event.target).value)" />
+            </div>
+          </div>
+
+          <!-- Payment Method -->
+          <div class="field-group">
+            <label class="field-label">Payment Method</label>
+            <div class="pay-toggle">
+              <button class="pay-tab" [class.active]="paymentType() === 'debit'"
+                      (click)="setPaymentType('debit')">Debit Card</button>
+              <button class="pay-tab" [class.active]="paymentType() === 'credit'"
+                      (click)="setPaymentType('credit')">Credit Card</button>
+            </div>
+            <div class="card-chips">
+              @for (card of filteredCards(); track card.id) {
+                <button class="card-chip" [class.active]="selectedCard()?.id === card.id"
+                        (click)="selectCard(card)">
+                  <span class="material-symbols-outlined">credit_card</span>
+                  {{ card.name }} **** {{ card.last_four }}
+                </button>
+              }
+              @if (!filteredCards().length) {
+                <p class="no-cards">No {{ paymentType() }} cards yet.</p>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Row 2: Category + Date ────────── -->
+        <div class="row-grid">
+
+          <!-- Category -->
+          <div class="field-group">
+            <label class="field-label">Category</label>
+            <div class="cat-grid">
+              @for (cat of categories(); track cat.id) {
+                <button class="cat-btn" [class.active]="selectedCat()?.id === cat.id"
+                        (click)="selectCategory(cat)">
+                  <span class="material-symbols-outlined cat-icon"
+                        [style.color]="selectedCat()?.id === cat.id ? '#68558d' : '#665883'">
+                    {{ cat.icon || 'more_horiz' }}
+                  </span>
+                  <span class="cat-label">{{ cat.name }}</span>
+                </button>
+              }
+            </div>
+
+            <!-- Sub-categories -->
+            @if (selectedCat() && subcategories().length) {
+              <div class="sub-section">
+                <label class="sub-label">Sub-category</label>
+                <div class="chip-row">
+                  @for (sub of subcategories(); track sub.id) {
+                    <button class="sub-chip" [class.active]="selectedSub()?.id === sub.id"
+                            (click)="selectSub(sub)">{{ sub.name }}</button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Date + Place + Description + Notes (right column) -->
+          <div class="right-col">
+
+            <!-- Description (arriba de la fecha) -->
+            <div class="field-group">
+              <label class="field-label">Description</label>
+              <input class="place-input desc-input" type="text"
+                     placeholder="What was this expense for?"
+                     [value]="expDescription()"
+                     (input)="expDescription.set($any($event.target).value)" />
+            </div>
+
+            <div class="field-group">
+              <label class="field-label">Transaction Date</label>
+              <div class="date-display" (click)="showDateInput.set(!showDateInput())">
+                <div class="date-icon-box">
+                  <span class="material-symbols-outlined">calendar_today</span>
+                </div>
+                <div class="date-text">
+                  <p class="date-main">{{ formatDateDisplay(txDate()) }}</p>
+                  <p class="date-weekday">{{ getWeekday(txDate()) }}</p>
+                </div>
+                <span class="material-symbols-outlined date-chevron">expand_more</span>
+              </div>
+              @if (showDateInput()) {
+                <input class="date-input" type="date" [value]="txDate()"
+                       (change)="txDate.set($any($event.target).value); showDateInput.set(false)" />
+              }
+            </div>
+
+            <!-- Place -->
+            <div class="field-group">
+              <label class="field-label">Place</label>
+              <div class="place-box" [class.focused]="showPlacePicker()">
+            <div class="place-search-row">
+              <div class="place-icon-box">
+                <span class="material-symbols-outlined">location_on</span>
+              </div>
+              <input class="place-input" type="text" placeholder="Search or add a place..."
+                     [value]="placeSearch()"
+                     (input)="onPlaceSearch($any($event.target).value)"
+                     (focus)="showPlacePicker.set(true)"
+                     (blur)="onPlaceBlur()" />
+              @if (selectedPlace()) {
+                <button class="place-clear" (click)="clearPlace()">
+                  <span class="material-symbols-outlined">close</span>
+                </button>
+              }
+            </div>
+
+            @if (showPlacePicker() && placeSearch().length > 0) {
+              <div class="place-dropdown">
+                @for (p of filteredPlaces(); track p.id) {
+                  <button class="place-item" (mousedown)="selectPlace(p)">
+                    <span class="material-symbols-outlined place-item-icon">location_on</span>
+                    <span class="place-item-name">{{ p.name }}</span>
+                    @if (p.category) {
+                      <span class="place-item-cat">{{ p.category }}</span>
+                    }
+                  </button>
+                }
+                @if (canCreatePlace()) {
+                  <button class="place-item place-item--create" (mousedown)="createAndSelectPlace()">
+                    <span class="material-symbols-outlined">add_location_alt</span>
+                    <span>Add "{{ placeSearch() }}"</span>
+                  </button>
+                }
+                @if (!filteredPlaces().length && !canCreatePlace()) {
+                  <p class="place-empty">No results</p>
+                }
+              </div>
+            }
+              </div>
+            </div>
+
+            <!-- Notes (debajo de Place) -->
+            <div class="field-group">
+              <label class="field-label">Notes</label>
+              <textarea class="notes-textarea" rows="2"
+                        placeholder="Additional details (optional)"
+                        [value]="expNotes()"
+                        (input)="expNotes.set($any($event.target).value)"></textarea>
+            </div>
+
+          </div><!-- /right-col -->
+        </div><!-- /row-grid -->
+
+        <!-- ── Split Expense ──────────────────── -->
+        <div class="split-wrapper">
+          <div class="split-box">
+
+            <!-- Header + toggle -->
+            <div class="split-head">
+              <div class="split-info">
+                <div class="split-icon-circle">
+                  <span class="material-symbols-outlined">group_add</span>
+                </div>
+                <div>
+                  <h3 class="split-title">Split Expense</h3>
+                  <p class="split-desc">Share the cost with friends or family</p>
+                </div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" [checked]="isSplit()" (change)="toggleSplit()" />
+                <span class="toggle-track"></span>
+              </label>
+            </div>
+
+            @if (isSplit()) {
+              <!-- People picker -->
+              <div class="people-row">
+                <div class="avatar-stack">
+                  @for (row of splitRows(); track $index) {
+                    @if (!row.is_me) {
+                      <span class="avatar avatar--person">{{ row.avatarInitial }}</span>
+                    }
+                  }
+                  <button class="avatar avatar--add" (click)="showPeoplePicker.update(v => !v)">
+                    <span class="material-symbols-outlined">add</span>
+                  </button>
+                </div>
+                <span class="people-label">{{ splitPeopleNames() }}</span>
+              </div>
+
+              <!-- People picker dropdown -->
+              @if (showPeoplePicker()) {
+                <div class="people-picker">
+                  @for (p of people(); track p.id) {
+                    <button class="people-pick-item" [class.selected]="isPersonAdded(p)"
+                            (click)="addPerson(p)">
+                      <span class="avatar avatar--sm">{{ p.name.charAt(0) }}</span>
+                      {{ p.name }}
+                      @if (isPersonAdded(p)) { <span class="material-symbols-outlined pick-check">check</span> }
+                    </button>
+                  }
+                  @if (!people().length) {
+                    <p class="no-people">No people added yet.</p>
+                  }
+                </div>
+              }
+
+              <!-- Method tabs -->
+              <div class="method-tabs">
+                <button class="method-tab" [class.active]="splitMethod() === 'equal'"
+                        (click)="setSplitMethod('equal')">Equal</button>
+                <button class="method-tab" [class.active]="splitMethod() === 'specific'"
+                        (click)="setSplitMethod('specific')">Specific</button>
+                <button class="method-tab" [class.active]="splitMethod() === 'percentage'"
+                        (click)="setSplitMethod('percentage')">Percentage</button>
+              </div>
+
+              <!-- Split rows -->
+              <div class="split-list">
+                @for (row of splitRows(); track $index; let i = $index) {
+                  <div class="split-item">
+                    <div class="split-person">
+                      <span class="avatar avatar--sm">{{ row.avatarInitial }}</span>
+                      <span class="split-name">{{ row.label }}</span>
+                    </div>
+
+                    @if (splitMethod() === 'equal') {
+                      <span class="split-amount">${{ row.amount.toFixed(2) }}</span>
+                    } @else if (splitMethod() === 'specific') {
+                      <input class="split-input" type="number" min="0" step="0.01"
+                             [value]="row.amount"
+                             (input)="onSpecificChange(i, +$any($event.target).value)" />
+                    } @else {
+                      <div class="pct-group">
+                        <input class="split-input split-input--pct" type="number" min="0" max="100"
+                               [value]="row.percentage"
+                               (input)="onPctChange(i, +$any($event.target).value)" />
+                        <span class="pct-eq">= ${{ row.amount.toFixed(2) }}</span>
+                      </div>
+                    }
+                  </div>
+                }
+
+                @if (splitMethod() === 'percentage') {
+                  <div class="pct-total" [class.ok]="pctTotal() === 100" [class.err]="pctTotal() !== 100">
+                    Total: {{ pctTotal().toFixed(1) }}% {{ pctTotal() === 100 ? '✓' : '— must equal 100%' }}
+                  </div>
+                }
+              </div>
+            }
+
+          </div>
+        </div>
+
+        <!-- ── Error ──────────────────────────── -->
+        @if (errorMsg()) {
+          <div class="error-msg">{{ errorMsg() }}</div>
+        }
+
+        <!-- ── Actions ────────────────────────── -->
+        <div class="form-actions">
+          <button class="btn-save" [disabled]="!isValid() || saving()" (click)="save()">
+            {{ saving() ? 'Saving...' : isEdit() ? 'Update Expense' : (saved() ? '✓ Saved!' : 'Save Expense Entry') }}
+          </button>
+          <button class="btn-cancel" routerLink="/expenses">Cancel</button>
+        </div>
+
+      </div><!-- /form-inner -->
+    </section>
+
+    <!-- ── Receipt ───────────────────────────── -->
+    <div class="receipt-row">
+      <label class="receipt-btn">
+        <input type="file" accept="image/*,.pdf" style="display:none" (change)="onFile($event)" />
+        <span class="material-symbols-outlined">upload_file</span>
+        {{ receiptFile() ? 'Change receipt' : 'Attach a receipt photo' }}
+      </label>
+
+      @if (receiptFile()) {
+        <div class="receipt-preview">
+          @if (receiptFile()!.type.startsWith('image/')) {
+            <img [src]="receiptPreview()" class="receipt-img" />
+          } @else {
+            <embed [src]="receiptPreview()" type="application/pdf" class="receipt-pdf-embed" />
+          }
+          <div class="receipt-meta">
+            <span class="receipt-filename">{{ receiptFile()!.name }}</span>
+            <button class="receipt-remove" (click)="removeFile()">✕ Remove</button>
+          </div>
+        </div>
+      }
+    </div>
+
+  </main>
+
+  <!-- ── Success toast ─────────────────────── -->
+  @if (saved()) {
+    <div class="toast">
+      <div class="toast-icon"><span class="material-symbols-outlined">check_circle</span></div>
+      <span>Expense recorded successfully!</span>
+    </div>
+  }
+
+</div>

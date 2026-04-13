@@ -1,0 +1,581 @@
+<div class="page">
+  <div class="orb orb--tr"></div>
+  <div class="orb orb--bl"></div>
+
+  <!-- ── Nav ─────────────────────────────────────── -->
+  <nav class="top-nav">
+    <div class="nav-left">
+      <a class="nav-back" routerLink="/" title="Back to home"><span class="material-symbols-outlined">arrow_back</span></a>
+      <span class="nav-brand">Spending</span>
+      <div class="nav-links">
+        <a class="nav-link" routerLink="/income">Income</a>
+        <a class="nav-link" routerLink="/expenses">Expenses</a>
+        <a class="nav-link" routerLink="/payments">Payments</a>
+        <a class="nav-link" routerLink="/people">People</a>
+        <a class="nav-link" routerLink="/loans">Loans</a>
+        <a class="nav-link" routerLink="/places">Places</a>
+        <a class="nav-link nav-link--active" routerLink="/budget">Budget</a>
+        <a class="nav-link" routerLink="/projections">Projections</a>
+      </div>
+    </div>
+    <div class="nav-right">
+      <a class="btn-add-income" routerLink="/new-income">
+        <span class="material-symbols-outlined">add</span>
+        Add Income
+      </a>
+      <a class="btn-add-expense" routerLink="/spending">
+        <span class="material-symbols-outlined">add</span>
+        Add Expense
+      </a>
+      <span class="material-symbols-outlined nav-icon">notifications</span>
+      <span class="material-symbols-outlined nav-icon">account_circle</span>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- ══════════════════════════════════════════════
+         SECTION 1 — BUDGET DASHBOARD
+    ══════════════════════════════════════════════ -->
+    <div class="section-header">
+      <div>
+        <h1 class="page-title">Monthly Budget</h1>
+        <p class="page-sub">Track spending across expense types, categories, and subcategories.</p>
+      </div>
+    </div>
+
+    @if (!loading()) {
+      <!-- Expense type cards -->
+      <div class="type-cards-grid">
+        @for (type of expenseTypes(); track type.id) {
+          <div class="type-card"
+               [class.type-card--active]="selectedTypeId() === type.id"
+               [style.--type-color]="type.color"
+               (click)="selectType(type.id)">
+            <div class="type-card__top">
+              <div class="type-card__icon-wrap">
+                <span class="material-symbols-outlined">{{ type.icon }}</span>
+              </div>
+              <span class="type-card__name">{{ type.name }}</span>
+            </div>
+            <!-- Show % from current month config if available -->
+            @if (monthlyBudgets()[0]; as latestBudget) {
+              @for (bt of latestBudget.types; track bt.expense_type_id) {
+                @if (bt.expense_type_id === type.id) {
+                  <div class="type-card__pct">{{ bt.percentage }}%</div>
+                  <div class="type-card__limit">{{ fmt(budgetForType(type.id, latestBudget)) }} / mo</div>
+                }
+              }
+            }
+            @if (selectedTypeId() === type.id) {
+              <span class="type-card__check material-symbols-outlined">check_circle</span>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Drilldown breadcrumb -->
+      @if (selectedTypeId() || selectedCategoryId()) {
+        <div class="breadcrumb">
+          <button class="breadcrumb__btn" (click)="clearDrilldown()">All types</button>
+          @if (selectedTypeId()) {
+            <span class="breadcrumb__sep material-symbols-outlined">chevron_right</span>
+            <span class="breadcrumb__item">{{ typeName(selectedTypeId()!) }}</span>
+          }
+          @if (selectedCategoryId()) {
+            <span class="breadcrumb__sep material-symbols-outlined">chevron_right</span>
+            <span class="breadcrumb__item">{{ catName(selectedCategoryId()!) }}</span>
+          }
+        </div>
+      }
+
+      <!-- ── Line Chart ───────────────────────────── -->
+      <div class="chart-card">
+        <div class="chart-card__header">
+          <div>
+            <h2 class="chart-title">Spending Trends</h2>
+            <p class="chart-sub">
+              @if (selectedCategoryId()) { Subcategory breakdown }
+              @else if (selectedTypeId()) { Category breakdown }
+              @else { Expense types }
+            </p>
+          </div>
+          <!-- Trend period filter tabs -->
+          <div class="trend-filters">
+            <button class="date-filter-btn" [class.active]="trendFilter() === '6m'"    (click)="setTrendFilter('6m')">6 Months</button>
+            <button class="date-filter-btn" [class.active]="trendFilter() === '1y'"    (click)="setTrendFilter('1y')">This Year</button>
+            <button class="date-filter-btn" [class.active]="trendFilter() === 'all'"   (click)="setTrendFilter('all')">All Time</button>
+            <button class="date-filter-btn" [class.active]="trendFilter() === 'custom'" (click)="setTrendFilter('custom')">Custom</button>
+          </div>
+        </div>
+
+        @if (trendFilter() === 'custom') {
+          <div class="custom-range">
+            <input type="date" class="date-input"
+              [value]="trendFrom()"
+              (change)="trendFrom.set($any($event.target).value)" />
+            <span class="range-sep">–</span>
+            <input type="date" class="date-input"
+              [value]="trendTo()"
+              (change)="trendTo.set($any($event.target).value)" />
+            <button class="btn-apply" (click)="applyTrendCustom()">Apply</button>
+          </div>
+        }
+
+        <!-- Category chips when a type is selected -->
+        @if (selectedTypeId() && !selectedCategoryId()) {
+          <div class="cat-chip-row">
+            @for (cat of categoriesForType(); track cat.id) {
+              <button class="cat-chip" (click)="selectCategory(cat.id)">
+                <span class="material-symbols-outlined">{{ cat.icon }}</span>
+                {{ cat.name }}
+              </button>
+            }
+          </div>
+        }
+
+        @if (trendLoading()) {
+          <div class="chart-skeleton"></div>
+        } @else if (!chartSeries().length) {
+          <div class="chart-empty">
+            <span class="material-symbols-outlined">show_chart</span>
+            <p>No spending data for this selection</p>
+          </div>
+        } @else {
+          <div class="chart-wrap">
+            <svg class="chart-svg" [attr.viewBox]="'0 0 ' + VB_W + ' ' + VB_H" preserveAspectRatio="xMidYMid meet">
+
+              <!-- ── Gradient defs (one per series) ───── -->
+              <defs>
+                @for (s of chartSeries(); track s.id; let i = $index) {
+                  <linearGradient [attr.id]="'grad-' + i" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%"   [attr.stop-color]="s.color" stop-opacity="0.28"/>
+                    <stop offset="100%" [attr.stop-color]="s.color" stop-opacity="0.02"/>
+                  </linearGradient>
+                }
+              </defs>
+
+              <!-- ── Horizontal grid lines + Y labels ── -->
+              @for (tick of yAxisTicks(); track $index; let last = $last) {
+                <line [attr.x1]="PLOT_X0" [attr.y1]="tick.y"
+                      [attr.x2]="PLOT_X1" [attr.y2]="tick.y"
+                      stroke="#ebddff"
+                      [attr.stroke-width]="last ? 1.5 : 1"
+                      [attr.stroke-dasharray]="last ? '0' : '3 4'"/>
+                <text x="10" [attr.y]="tick.y + 4"
+                      font-size="10" font-weight="500"
+                      fill="#665883" font-family="Manrope,sans-serif">{{ tick.label }}</text>
+              }
+
+              <!-- ── Area fills (gradient) ──────────── -->
+              @for (s of chartSeries(); track s.id; let i = $index) {
+                <path [attr.d]="areaPath(s)" [attr.fill]="'url(#grad-' + i + ')'" stroke="none"/>
+              }
+
+              <!-- ── Smooth lines ──────────────────── -->
+              @for (s of chartSeries(); track s.id) {
+                <path [attr.d]="path(s)" [attr.stroke]="s.color"
+                      stroke-width="3" fill="none"
+                      stroke-linejoin="round" stroke-linecap="round"/>
+              }
+
+              <!-- ── Data dots (with halo for pop) ── -->
+              @for (s of chartSeries(); track s.id) {
+                @for (pt of s.points; track pt.x) {
+                  <circle [attr.cx]="pt.x" [attr.cy]="pt.y" r="7"
+                          [attr.fill]="s.color" fill-opacity="0.15"/>
+                  <circle [attr.cx]="pt.x" [attr.cy]="pt.y" r="4.5"
+                          fill="white" [attr.stroke]="s.color" stroke-width="2.5"/>
+                }
+              }
+
+              <!-- ── X-axis labels ─────────────────── -->
+              @for (m of chartMonths(); track m.month + '-' + m.year; let i = $index) {
+                <text [attr.x]="chartXpos(i)" [attr.y]="BASELINE + 26"
+                      font-size="11" font-weight="600"
+                      fill="#665883" font-family="Manrope,sans-serif"
+                      text-anchor="middle">{{ m.label }}</text>
+              }
+            </svg>
+
+            <!-- Legend -->
+            <div class="chart-legend">
+              @for (s of chartSeries(); track s.id) {
+                <span class="legend-item">
+                  <span class="legend-dot" [style.background]="s.color"></span>
+                  {{ s.label }}
+                </span>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ══════════════════════════════════════════════
+         SECTION 2 — MONTHLY CONFIGURATION
+    ══════════════════════════════════════════════ -->
+    <div class="section-divider">
+      <h2 class="section-heading">Monthly Configuration</h2>
+      <p class="section-desc">Set salary and expense type distribution for a specific month. Percentages must sum to 100%.</p>
+    </div>
+
+    <div class="config-layout">
+
+      <!-- Left: config editor -->
+      <div class="config-editor">
+
+        <!-- Month picker -->
+        <div class="month-picker">
+          <button class="month-nav-btn" (click)="prevMonth()">
+            <span class="material-symbols-outlined">chevron_left</span>
+          </button>
+          <span class="month-label">{{ configMonthLabel() }}</span>
+          <button class="month-nav-btn" (click)="nextMonth()">
+            <span class="material-symbols-outlined">chevron_right</span>
+          </button>
+        </div>
+
+        <!-- Salary -->
+        <div class="field-group">
+          <label class="field-label">Monthly Salary</label>
+          <div class="input-wrap">
+            <span class="input-prefix">$</span>
+            <input class="field-input field-input--prefixed" type="number" min="0"
+                   [value]="configSalary()"
+                   (input)="configSalary.set(+$any($event.target).value)" />
+          </div>
+        </div>
+
+        <!-- Expense type toggles + sliders -->
+        <div class="field-group">
+          <label class="field-label">Active expense types for this month</label>
+
+          <!-- Add type button -->
+          <div class="type-toggle-list">
+            @for (type of expenseTypes(); track type.id) {
+              <div class="type-toggle-row" [class.type-toggle-row--active]="isTypeActive(type.id)">
+                <div class="type-toggle-row__left">
+                  <button class="type-toggle-check" (click)="toggleType(type)"
+                          [style.background]="isTypeActive(type.id) ? type.color : undefined">
+                    @if (isTypeActive(type.id)) {
+                      <span class="material-symbols-outlined">check</span>
+                    }
+                  </button>
+                  <span class="material-symbols-outlined type-toggle-icon" [style.color]="type.color">{{ type.icon }}</span>
+                  <span class="type-toggle-name">{{ type.name }}</span>
+                </div>
+                @if (activeRowFor(type.id); as row) {
+                  <div class="type-pct-control">
+                    <input type="range" class="pct-slider" min="0" max="100" step="1"
+                           [value]="row.percentage"
+                           (input)="updatePct(type.id, +$any($event.target).value)"
+                           [style.accent-color]="type.color" />
+                    <div class="pct-display-group">
+                      <span class="pct-value" [style.color]="type.color">{{ row.percentage }}%</span>
+                      @if (configSalary() > 0) {
+                        <span class="pct-salary">{{ fmt(salaryFor(row)) }}</span>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Total indicator -->
+        <div class="pct-total-bar">
+          <div class="pct-total-fill" [style.width]="Math.min(percentageTotal(), 100) + '%'"
+               [class.pct-total-fill--error]="Math.abs(percentageTotal() - 100) > 0.01 && percentageTotal() > 0"
+               [class.pct-total-fill--ok]="Math.abs(percentageTotal() - 100) <= 0.01">
+          </div>
+        </div>
+        <p class="pct-total-label"
+           [class.pct-total-label--error]="Math.abs(percentageTotal() - 100) > 0.01 && percentageTotal() > 0"
+           [class.pct-total-label--ok]="Math.abs(percentageTotal() - 100) <= 0.01">
+          {{ percentageTotal().toFixed(1) }}% of 100%
+        </p>
+
+        @if (configError()) {
+          <div class="error-msg">{{ configError() }}</div>
+        }
+        @if (configSuccess()) {
+          <div class="success-msg">
+            <span class="material-symbols-outlined">check_circle</span>
+            Configuration saved successfully.
+          </div>
+        }
+
+        <button class="btn-save" [disabled]="configSaving() || Math.abs(percentageTotal() - 100) > 0.01" (click)="saveConfig()">
+          <span class="material-symbols-outlined">save</span>
+          {{ configSaving() ? 'Saving…' : 'Save for ' + configMonthLabel() }}
+        </button>
+      </div>
+
+      <!-- Right: history table -->
+      <div class="config-history">
+        <h3 class="history-title">Saved Configurations</h3>
+        @if (!monthlyBudgets().length) {
+          <p class="history-empty">No saved budgets yet.</p>
+        } @else {
+          <div class="history-list">
+            @for (b of monthlyBudgets(); track b.id) {
+              <div class="history-row" (click)="loadBudgetRow(b)">
+                <div class="history-row__month">{{ monthName(b.month) }} {{ b.year }}</div>
+                <div class="history-row__salary">{{ fmtFull(b.salary) }}</div>
+                <div class="history-row__types">
+                  @for (t of b.types; track t.expense_type_id) {
+                    <span class="history-type-badge" [style.color]="t.color" [style.background]="t.color + '22'">
+                      {{ t.percentage }}%
+                    </span>
+                  }
+                </div>
+                <span class="material-symbols-outlined history-row__arrow">edit</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         SECTION 3 — EXPENSE TYPES MANAGEMENT
+    ══════════════════════════════════════════════ -->
+    <div class="section-divider">
+      <div class="section-divider__row">
+        <div>
+          <h2 class="section-heading">Expense Types</h2>
+          <p class="section-desc">Global types that group your categories. Assign a percentage to each type per month.</p>
+        </div>
+        <button class="btn-outlined" (click)="showNewTypeForm.set(!showNewTypeForm())">
+          <span class="material-symbols-outlined">{{ showNewTypeForm() ? 'close' : 'add' }}</span>
+          New Type
+        </button>
+      </div>
+    </div>
+
+    @if (showNewTypeForm()) {
+      <div class="inline-form">
+        <div class="inline-form__fields">
+          <div class="field-group">
+            <label class="field-label">Name</label>
+            <input class="field-input" type="text" placeholder="e.g. Healthcare"
+                   [value]="newTypeName()" (input)="newTypeName.set($any($event.target).value)" />
+          </div>
+          <div class="field-group">
+            <label class="field-label">Icon</label>
+            <div class="icon-grid">
+              @for (ico of TYPE_ICONS; track ico) {
+                <button type="button" class="icon-option"
+                        [class.selected]="newTypeIcon() === ico"
+                        (click)="newTypeIcon.set(ico)">
+                  <span class="material-symbols-outlined">{{ ico }}</span>
+                </button>
+              }
+            </div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Color</label>
+            <input type="color" class="color-input" [value]="newTypeColor()"
+                   (input)="newTypeColor.set($any($event.target).value)" />
+          </div>
+        </div>
+        <div class="inline-form__actions">
+          <button class="btn-save btn-save--sm" (click)="addExpenseType()">
+            <span class="material-symbols-outlined">add</span> Create Type
+          </button>
+          <button class="btn-cancel" (click)="showNewTypeForm.set(false)">Cancel</button>
+        </div>
+      </div>
+    }
+
+    <div class="type-mgmt-list">
+      @for (type of expenseTypes(); track type.id) {
+        <div class="type-mgmt-card" [class.type-mgmt-card--open]="expandedTypeId() === type.id">
+
+          <!-- Header row -->
+          <div class="type-mgmt-row" (click)="toggleExpanded(type.id)">
+            <div class="type-mgmt-row__icon" [style.background]="type.color + '22'">
+              <span class="material-symbols-outlined" [style.color]="type.color">{{ type.icon }}</span>
+            </div>
+            <span class="type-mgmt-row__name">{{ type.name }}</span>
+
+            <!-- Assigned category pills -->
+            <div class="type-mgmt-row__pills">
+              @for (cat of catsForType(type.id); track cat.id) {
+                <span class="cat-pill" [style.background]="cat.color + '22'" [style.color]="cat.color">
+                  <span class="material-symbols-outlined">{{ cat.icon }}</span>
+                  {{ cat.name }}
+                </span>
+              }
+              @if (!catsForType(type.id).length) {
+                <span class="type-mgmt-row__cats">0 categories</span>
+              }
+            </div>
+
+            <span class="type-mgmt-row__chevron material-symbols-outlined"
+                  [class.rotated]="expandedTypeId() === type.id">expand_more</span>
+            <button class="icon-btn icon-btn--danger" (click)="$event.stopPropagation(); deleteExpenseType(type.id)">
+              <span class="material-symbols-outlined">delete_outline</span>
+            </button>
+          </div>
+
+          <!-- Expanded: category checklist -->
+          @if (expandedTypeId() === type.id) {
+            <div class="type-cat-picker">
+              <p class="type-cat-picker__hint">Select which categories belong to <strong>{{ type.name }}</strong></p>
+              <div class="type-cat-checklist">
+                @for (cat of categories(); track cat.id) {
+                  <button type="button"
+                          class="cat-check-item"
+                          [class.cat-check-item--on]="isCatInType(cat, type.id)"
+                          (click)="toggleCatForType(cat, type.id)">
+                    <span class="cat-check-item__icon" [style.background]="cat.color + '22'">
+                      <span class="material-symbols-outlined" [style.color]="cat.color">{{ cat.icon }}</span>
+                    </span>
+                    <span class="cat-check-item__name">{{ cat.name }}</span>
+                    <span class="cat-check-item__check material-symbols-outlined"
+                          [style.color]="isCatInType(cat, type.id) ? type.color : 'transparent'">
+                      check_circle
+                    </span>
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+        </div>
+      }
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         SECTION 4 — CATEGORIES & SUBCATEGORIES
+    ══════════════════════════════════════════════ -->
+    <div class="section-divider">
+      <div class="section-divider__row">
+        <div>
+          <h2 class="section-heading">Categories &amp; Subcategories</h2>
+          <p class="section-desc">Organize your expenses with precise labeling.</p>
+        </div>
+        <button class="btn-outlined" (click)="showNewCatForm.set(!showNewCatForm())">
+          <span class="material-symbols-outlined">{{ showNewCatForm() ? 'close' : 'add' }}</span>
+          New Category
+        </button>
+      </div>
+    </div>
+
+    @if (showNewCatForm()) {
+      <div class="inline-form">
+        <div class="inline-form__fields">
+          <div class="field-group">
+            <label class="field-label">Name</label>
+            <input class="field-input" type="text" placeholder="e.g. Food & Dining"
+                   [value]="newCatName()" (input)="newCatName.set($any($event.target).value)" />
+          </div>
+          <div class="field-group">
+            <label class="field-label">Expense Type</label>
+            <select class="field-input field-select"
+                    [value]="newCatTypeId()" (change)="newCatTypeId.set($any($event.target).value)">
+              <option value="">— None —</option>
+              @for (t of expenseTypes(); track t.id) {
+                <option [value]="t.id">{{ t.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Icon</label>
+            <div class="icon-grid">
+              @for (ico of TYPE_ICONS; track ico) {
+                <button type="button" class="icon-option"
+                        [class.selected]="newCatIcon() === ico"
+                        (click)="newCatIcon.set(ico)">
+                  <span class="material-symbols-outlined">{{ ico }}</span>
+                </button>
+              }
+            </div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Color</label>
+            <input type="color" class="color-input" [value]="newCatColor()"
+                   (input)="newCatColor.set($any($event.target).value)" />
+          </div>
+        </div>
+        <div class="inline-form__actions">
+          <button class="btn-save btn-save--sm" (click)="addCategory()">
+            <span class="material-symbols-outlined">add</span> Create Category
+          </button>
+          <button class="btn-cancel" (click)="showNewCatForm.set(false)">Cancel</button>
+        </div>
+      </div>
+    }
+
+    <div class="cat-grid">
+      @for (cat of categories(); track cat.id) {
+        <div class="cat-card">
+          <div class="cat-card__head">
+            <div class="cat-card__icon" [style.background]="cat.color + '22'">
+              <span class="material-symbols-outlined" [style.color]="cat.color">{{ cat.icon }}</span>
+            </div>
+            <div class="cat-card__info">
+              <h3 class="cat-card__name">{{ cat.name }}</h3>
+              @if (cat.expense_type_id) {
+                <span class="cat-type-badge">
+                  {{ typeName(cat.expense_type_id) }}
+                </span>
+              }
+            </div>
+            <button class="icon-btn icon-btn--danger cat-delete-btn" (click)="deleteCategory(cat.id)">
+              <span class="material-symbols-outlined">delete_outline</span>
+            </button>
+          </div>
+
+          <!-- Subcategories list -->
+          <div class="sub-list">
+            @for (sub of cat.subcategories; track sub.id) {
+              <div class="sub-row">
+                @if (editingSubId() === sub.id) {
+                  <input class="sub-edit-input" type="text"
+                         [value]="editingSubName()"
+                         (input)="editingSubName.set($any($event.target).value)"
+                         (keyup.enter)="saveEditSub(cat.id, sub.id)"
+                         (blur)="saveEditSub(cat.id, sub.id)" />
+                } @else {
+                  <span class="sub-name" (click)="startEditSub(sub)">{{ sub.name }}</span>
+                  <button class="icon-btn icon-btn--sm" (click)="startEditSub(sub)">
+                    <span class="material-symbols-outlined">edit</span>
+                  </button>
+                  <button class="icon-btn icon-btn--sm icon-btn--danger" (click)="deleteSub(cat.id, sub.id)">
+                    <span class="material-symbols-outlined">close</span>
+                  </button>
+                }
+              </div>
+            }
+
+            <!-- Add subcategory -->
+            @if (addingSubForCat() === cat.id) {
+              <div class="sub-add-row">
+                <input class="sub-edit-input" type="text" placeholder="Subcategory name"
+                       [value]="newSubName()"
+                       (input)="newSubName.set($any($event.target).value)"
+                       (keyup.enter)="addSubcategory(cat.id)" />
+                <button class="icon-btn" (click)="addSubcategory(cat.id)">
+                  <span class="material-symbols-outlined">check</span>
+                </button>
+                <button class="icon-btn icon-btn--danger" (click)="addingSubForCat.set(null)">
+                  <span class="material-symbols-outlined">close</span>
+                </button>
+              </div>
+            } @else {
+              <button class="btn-add-sub" (click)="startAddSub(cat.id)">
+                <span class="material-symbols-outlined">add_circle</span>
+                Add subcategory
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+  </main>
+</div>

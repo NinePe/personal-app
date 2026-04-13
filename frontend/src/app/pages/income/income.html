@@ -1,0 +1,212 @@
+<div class="page">
+  <div class="orb orb--tr"></div>
+  <div class="orb orb--bl"></div>
+
+  <!-- ── Nav ─────────────────────────────────────── -->
+  <nav class="top-nav">
+    <div class="nav-left">
+      <a class="nav-back" routerLink="/" title="Back to home"><span class="material-symbols-outlined">arrow_back</span></a>
+      <span class="nav-brand">Spending</span>
+      <div class="nav-links">
+        <a class="nav-link nav-link--active" routerLink="/income">Income</a>
+        <a class="nav-link" routerLink="/expenses">Expenses</a>
+        <a class="nav-link" routerLink="/payments">Payments</a>
+        <a class="nav-link" routerLink="/people">People</a>
+        <a class="nav-link" routerLink="/loans">Loans</a>
+        <a class="nav-link" routerLink="/places">Places</a>
+        <a class="nav-link" routerLink="/budget">Budget</a>
+        <a class="nav-link" routerLink="/projections">Projections</a>
+      </div>
+    </div>
+    <div class="nav-right">
+      <a class="btn-add-income" routerLink="/new-income">
+        <span class="material-symbols-outlined">add</span>
+        Add Income
+      </a>
+      <a class="btn-add-expense" routerLink="/spending">
+        <span class="material-symbols-outlined">add</span>
+        Add Expense
+      </a>
+      <span class="material-symbols-outlined nav-icon">notifications</span>
+      <span class="material-symbols-outlined nav-icon">account_circle</span>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- ── Hero ──────────────────────────────────────── -->
+    <section class="hero">
+      <div class="hero__glow1"></div>
+      <div class="hero__glow2"></div>
+      <div class="hero__content">
+        <div class="hero__left">
+          <p class="hero__eyebrow">
+            <span class="material-symbols-outlined">payments</span>
+            Financial Summary · {{ fmtDate(summary()?.from) }} – {{ fmtDate(summary()?.to) }}
+          </p>
+          <h1 class="hero__title">Total Monthly Income</h1>
+          <div class="hero__amount-row">
+            <span class="hero__amount">{{ fmt(summary()?.total ?? 0) }}</span>
+            @if (changePct() != null) {
+              <span class="hero__change" [class.hero__change--up]="changePct()! >= 0" [class.hero__change--dn]="changePct()! < 0">
+                <span class="material-symbols-outlined">{{ changePct()! >= 0 ? 'trending_up' : 'trending_down' }}</span>
+                {{ changePct()! >= 0 ? '+' : '' }}{{ changePct()!.toFixed(1) }}% vs last month
+              </span>
+            }
+          </div>
+        </div>
+        <a class="btn-new-income-hero" routerLink="/new-income">
+          <span class="material-symbols-outlined">add</span>
+          New Income
+        </a>
+      </div>
+    </section>
+
+    <!-- ── Filter bar ─────────────────────────────────── -->
+    <div class="filter-bar">
+      <div class="filter-tabs">
+        <button class="filter-tab" [class.active]="filter() === 'month'" (click)="setFilter('month')">This Month</button>
+        <button class="filter-tab" [class.active]="filter() === 'year'"  (click)="setFilter('year')">This Year</button>
+        <button class="filter-tab" [class.active]="filter() === 'all'"   (click)="setFilter('all')">All Time</button>
+        <button class="filter-tab" [class.active]="filter() === 'custom'" (click)="setFilter('custom')">Custom</button>
+      </div>
+
+      @if (filter() === 'custom') {
+        <div class="date-range">
+          <input class="date-input" type="date" [value]="customFrom()"
+                 (change)="customFrom.set($any($event.target).value)" />
+          <span class="date-sep">→</span>
+          <input class="date-input" type="date" [value]="customTo()"
+                 (change)="customTo.set($any($event.target).value)" />
+          <button class="btn-apply" (click)="applyCustom()">Apply</button>
+        </div>
+      }
+
+      <div class="search-wrap">
+        <span class="material-symbols-outlined search-icon">search</span>
+        <input class="search-input" type="text" placeholder="Search income…"
+               [value]="search()" (input)="search.set($any($event.target).value)" />
+      </div>
+    </div>
+
+    <!-- ── Category pills ─────────────────────────────── -->
+    <div class="cat-row">
+      @for (cat of categories(); track cat.id) {
+        <button class="cat-pill"
+                [class.active]="activeCatId() === cat.id"
+                [style.--c]="cat.color"
+                (click)="toggleCategory(cat.id)">
+          <span class="material-symbols-outlined">{{ cat.icon }}</span>
+          {{ cat.name }}
+        </button>
+      }
+    </div>
+
+    <!-- ── Income table ───────────────────────────────── -->
+    @if (loading()) {
+      <div class="income-table">
+        @for (_ of [1,2,3,4,5]; track $index) {
+          <div class="income-skeleton"></div>
+        }
+      </div>
+    } @else if (!filtered().length) {
+      <div class="empty-state">
+        <div class="empty-orb">
+          <span class="material-symbols-outlined">payments</span>
+        </div>
+        <h3 class="empty-title">No income found</h3>
+        <p class="empty-desc">Register your first income entry to start tracking.</p>
+        <a class="btn-add-place" routerLink="/new-income">
+          <span class="material-symbols-outlined">add</span>
+          Add Income
+        </a>
+      </div>
+    } @else {
+      <div class="income-table">
+        <!-- Header -->
+        <div class="income-thead">
+          <div>Date</div>
+          <div>Description</div>
+          <div>Category</div>
+          <div>Account</div>
+          <div class="text-right">Amount</div>
+          <div></div>
+        </div>
+
+        <!-- Rows -->
+        @for (item of paged(); track item.id; let i = $index) {
+          <div class="income-row" [class.income-row--alt]="i % 2 === 1">
+
+            <div class="income-row__date">{{ fmtDate(item.transaction_date) }}</div>
+
+            <div class="income-row__desc">
+              <div class="income-row__icon"
+                   [style.background]="(item.category?.color ?? '#8373a0') + '22'">
+                <span class="material-symbols-outlined"
+                      [style.color]="item.category?.color ?? '#8373a0'">
+                  {{ item.category?.icon ?? 'payments' }}
+                </span>
+              </div>
+              <span class="income-row__name">{{ item.description || item.category?.name || 'Income' }}</span>
+            </div>
+
+            <div class="income-row__cats">
+              @if (item.category) {
+                <span class="income-badge"
+                      [style.background]="item.category.color + '20'"
+                      [style.color]="item.category.color">
+                  {{ item.category.name }}
+                </span>
+              }
+              @if (item.subcategory) {
+                <span class="income-badge income-badge--sub">{{ item.subcategory.name }}</span>
+              }
+            </div>
+
+            <div class="income-row__account">
+              @if (item.card) {
+                <span class="material-symbols-outlined">credit_card</span>
+                <span>**** {{ item.card.last_four }}</span>
+              } @else {
+                <span class="income-row__no-account">—</span>
+              }
+            </div>
+
+            <div class="income-row__amount">+{{ fmt(item.amount) }}</div>
+
+            <a class="income-row__edit" [routerLink]="['/new-income', item.id]" title="Edit">
+              <span class="material-symbols-outlined">edit</span>
+            </a>
+            <button class="income-row__del" (click)="deleteIncome(item.id)" title="Delete">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+
+          </div>
+        }
+      </div>
+
+      <!-- Footer: count + pagination -->
+      <div class="table-footer">
+        <span class="table-count">
+          Showing {{ paged().length }} of {{ filtered().length }} entries
+        </span>
+        @if (totalPages() > 1) {
+          <div class="pagination">
+            <button class="page-btn" [disabled]="page() === 0" (click)="page.set(page() - 1)">
+              <span class="material-symbols-outlined">chevron_left</span>
+            </button>
+            @for (p of pages(); track p) {
+              <button class="page-btn" [class.page-btn--active]="page() === p" (click)="page.set(p)">
+                {{ p + 1 }}
+              </button>
+            }
+            <button class="page-btn" [disabled]="page() === totalPages() - 1" (click)="page.set(page() + 1)">
+              <span class="material-symbols-outlined">chevron_right</span>
+            </button>
+          </div>
+        }
+      </div>
+    }
+
+  </main>
+</div>

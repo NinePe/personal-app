@@ -1,0 +1,205 @@
+<div class="page">
+  <div class="orb orb--tr"></div>
+  <div class="orb orb--bl"></div>
+
+  <!-- ── Nav ─────────────────────────────────────── -->
+  <nav class="top-nav">
+    <div class="nav-left">
+      <a class="nav-back" routerLink="/" title="Back to home"><span class="material-symbols-outlined">arrow_back</span></a>
+      <span class="nav-brand">Spending</span>
+      <div class="nav-links">
+        <a class="nav-link nav-link--active" routerLink="/income">Income</a>
+        <a class="nav-link" routerLink="/expenses">Expenses</a>
+        <a class="nav-link" routerLink="/payments">Payments</a>
+        <a class="nav-link" routerLink="/people">People</a>
+        <a class="nav-link" routerLink="/loans">Loans</a>
+        <a class="nav-link" routerLink="/places">Places</a>
+        <a class="nav-link" routerLink="/budget">Budget</a>
+        <a class="nav-link" routerLink="/projections">Projections</a>
+      </div>
+    </div>
+    <div class="nav-right">
+      <a class="btn-add-income" routerLink="/new-income">
+        <span class="material-symbols-outlined">add</span>
+        Add Income
+      </a>
+      <a class="btn-add-expense" routerLink="/spending">
+        <span class="material-symbols-outlined">add</span>
+        Add Expense
+      </a>
+      <span class="material-symbols-outlined nav-icon">notifications</span>
+      <span class="material-symbols-outlined nav-icon">account_circle</span>
+    </div>
+  </nav>
+
+  <main class="main">
+    <div class="layout">
+
+      <!-- ── Left: preview ──────────────────────── -->
+      <div class="preview-col">
+        <div class="preview-header">
+          <h1 class="preview-title">{{ isEdit() ? 'Edit Income' : 'Log New\nIncome' }}</h1>
+          <p class="preview-sub">{{ isEdit() ? 'Update this income entry.' : 'Keep your finances up to date.' }}</p>
+        </div>
+
+        <!-- Income preview card -->
+        <div class="income-preview" [style.--cat-color]="selectedCategory()?.color ?? '#68558d'">
+          <div class="income-preview__top">
+            <div class="income-preview__icon-circle">
+              <span class="material-symbols-outlined"
+                    [style.color]="selectedCategory()?.color ?? '#68558d'">
+                {{ selectedCategory()?.icon ?? 'payments' }}
+              </span>
+            </div>
+            <div>
+              <p class="income-preview__cat">{{ selectedCategory()?.name ?? 'Category' }}</p>
+              @if (subId()) {
+                <p class="income-preview__sub">
+                  {{ selectedSubName() }}
+                </p>
+              }
+            </div>
+          </div>
+          <div class="income-preview__amount">{{ amountDisplay() }}</div>
+          <p class="income-preview__desc">{{ description().trim() || 'Income entry' }}</p>
+          @if (selectedCard()) {
+            <div class="income-preview__card">
+              <span class="material-symbols-outlined">credit_card</span>
+              <span>{{ selectedCard()!.name }} **** {{ selectedCard()!.last_four }}</span>
+            </div>
+          }
+        </div>
+
+        <!-- Feature hints -->
+        <div class="feature-grid">
+          <div class="feature-chip">
+            <span class="material-symbols-outlined feature-icon feature-icon--primary">trending_up</span>
+            <div>
+              <p class="feature-chip__title">Income Tracking</p>
+              <p class="feature-chip__desc">Monitor all your earnings in one place</p>
+            </div>
+          </div>
+          <div class="feature-chip">
+            <span class="material-symbols-outlined feature-icon feature-icon--secondary">pie_chart</span>
+            <div>
+              <p class="feature-chip__title">Source Breakdown</p>
+              <p class="feature-chip__desc">Understand where your money comes from</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Right: form ────────────────────────── -->
+      <div class="form-card">
+
+        <!-- Amount -->
+        <div class="field-group">
+          <label class="field-label">Amount <span class="required">*</span></label>
+          <div class="amount-wrap">
+            <span class="amount-prefix">$</span>
+            <input class="amount-input" type="number" min="0" step="0.01" placeholder="0.00"
+                   [value]="amount()" (input)="amount.set($any($event.target).value)" />
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="field-group">
+          <label class="field-label">Description</label>
+          <div class="input-wrap">
+            <input class="field-input" type="text" placeholder="e.g. Monthly salary – April"
+                   [value]="description()" (input)="description.set($any($event.target).value)" />
+            <span class="material-symbols-outlined input-icon">edit_note</span>
+          </div>
+        </div>
+
+        <!-- Category -->
+        <div class="field-group">
+          <label class="field-label">Category <span class="required">*</span></label>
+          <div class="cat-grid">
+            @for (cat of categories(); track cat.id) {
+              <button type="button" class="cat-btn"
+                      [class.active]="categoryId() === cat.id"
+                      [style.--c]="cat.color"
+                      (click)="selectCategory(cat.id)">
+                <span class="material-symbols-outlined">{{ cat.icon }}</span>
+                {{ cat.name }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Subcategory -->
+        @if (subcategories().length) {
+          <div class="field-group">
+            <label class="field-label">Subcategory</label>
+            <div class="subcat-grid">
+              @for (sub of subcategories(); track sub.id) {
+                <button type="button" class="subcat-btn"
+                        [class.active]="subId() === sub.id"
+                        (click)="subId.set(subId() === sub.id ? '' : sub.id)">
+                  {{ sub.name }}
+                </button>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Date -->
+        <div class="field-group">
+          <label class="field-label">Date Received</label>
+          <div class="input-wrap">
+            <input class="field-input" type="date" [value]="date()"
+                   (change)="date.set($any($event.target).value)" />
+            <span class="material-symbols-outlined input-icon">calendar_today</span>
+          </div>
+        </div>
+
+        <!-- Receiving account -->
+        @if (cards().length) {
+          <div class="field-group">
+            <label class="field-label">Receiving Account</label>
+            <div class="card-options">
+              @for (c of cards(); track c.id) {
+                <button type="button" class="card-option"
+                        [class.active]="cardId() === c.id"
+                        (click)="cardId.set(c.id)">
+                  <div class="card-option__icon">
+                    <span class="material-symbols-outlined">credit_card</span>
+                  </div>
+                  <div>
+                    <p class="card-option__name">{{ c.name }}</p>
+                    <p class="card-option__sub">**** {{ c.last_four }}</p>
+                  </div>
+                  @if (cardId() === c.id) {
+                    <span class="material-symbols-outlined card-option__check">check_circle</span>
+                  }
+                </button>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Notes -->
+        <div class="field-group">
+          <label class="field-label">Notes</label>
+          <textarea class="field-input field-textarea" placeholder="Any additional details…"
+                    [value]="notes()" (input)="notes.set($any($event.target).value)"></textarea>
+        </div>
+
+        @if (errorMsg()) {
+          <div class="error-msg">{{ errorMsg() }}</div>
+        }
+
+        <!-- Actions -->
+        <div class="form-actions">
+          <button class="btn-save" [disabled]="!isValid() || saving()" (click)="save()">
+            <span class="material-symbols-outlined">payments</span>
+            {{ saving() ? 'Saving…' : (isEdit() ? 'Save Changes' : 'Register Income') }}
+          </button>
+          <a class="btn-cancel" routerLink="/income">Cancel</a>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>

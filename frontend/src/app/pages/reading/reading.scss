@@ -1,0 +1,505 @@
+:host {
+  // Rose / brown theme matching Reading Journey card
+  --bg:              #fbfbe2;
+  --surface:         #fbfbe2;
+  --surface-low:     #f5f5dc;
+  --surface-mid:     #efefd7;
+  --surface-high:    #eaead1;
+  --surface-high2:   #e4e4cc;
+  --surface-lowest:  #ffffff;
+  --primary:         #77553d;
+  --primary-dim:     #5f402a;
+  --primary-cont:    #926d54;
+  --primary-fixed:   #ffdcc6;
+  --primary-fixed-dim: #eabda0;
+  --on-primary:      #ffffff;
+  --on-surface:      #1b1d0e;
+  --on-surface-var:  #504441;
+  --outline-var:     #d4c3be;
+  --secondary:       #735a3a;
+  --secondary-cont:  #fddab2;
+  --on-sec-cont:     #785e3e;
+  --error:           #ba1a1a;
+  display: block;
+}
+
+// ── Page shell ────────────────────────────────────────────────
+.page { position: relative; min-height: 100vh; background: var(--bg); overflow-x: hidden; }
+.orb {
+  position: fixed; border-radius: 50%; pointer-events: none;
+  filter: blur(100px); opacity: .35; z-index: 0;
+  &--tr { width: 460px; height: 460px; top: -120px; right: -120px; background: var(--primary-fixed); }
+  &--bl { width: 380px; height: 380px; bottom: -100px; left: -100px; background: var(--primary-fixed-dim); }
+}
+.main {
+  position: relative; z-index: 1;
+  max-width: 1280px; margin: 0 auto;
+  padding: 1rem 2.5rem 4rem;
+}
+
+// ── Top nav (same layout as spending pages) ───────────────────
+.top-nav {
+  position: relative; z-index: 10;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.25rem 2.5rem; max-width: 1280px; margin: 0 auto;
+}
+.nav-left { display: flex; align-items: center; gap: 1.5rem; }
+.nav-brand {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800; font-size: 1.15rem;
+  color: var(--primary); letter-spacing: -.02em;
+}
+.nav-links { display: flex; gap: 1.25rem; margin-left: .5rem; }
+.nav-link {
+  color: var(--on-surface-var); font-size: .85rem; text-decoration: none;
+  font-weight: 500; padding: .3rem .1rem;
+  &:hover { color: var(--primary); }
+  &--active { color: var(--primary); border-bottom: 2px solid var(--primary); }
+}
+.nav-right { display: flex; align-items: center; gap: .75rem; }
+.btn-add-book, .btn-read-now {
+  display: inline-flex; align-items: center; gap: .4rem;
+  color: #fff;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: .82rem; font-weight: 700;
+  padding: .55rem 1.25rem;
+  border-radius: 999px; border: none; cursor: pointer; text-decoration: none;
+  transition: opacity .15s, transform .15s, box-shadow .2s;
+  .material-symbols-outlined { font-size: 1.1rem; }
+  &:hover { opacity: .95; transform: translateY(-1px); }
+}
+.btn-add-book {
+  background: linear-gradient(135deg, var(--primary), var(--primary-cont));
+  box-shadow: 0 4px 16px rgba(119,85,61,.22);
+  &:hover { box-shadow: 0 8px 22px rgba(119,85,61,.3); }
+}
+.btn-read-now {
+  background: linear-gradient(135deg, var(--secondary), #9a7a52);
+  box-shadow: 0 4px 16px rgba(115,90,58,.22);
+  &:hover { box-shadow: 0 8px 22px rgba(115,90,58,.3); }
+}
+.nav-icon {
+  font-size: 1.4rem; color: var(--on-surface-var);
+  padding: .4rem; border-radius: 50%; cursor: pointer;
+  transition: background .2s;
+  &:hover { background: var(--surface-mid); }
+}
+
+// Override global nav-back style for this theme
+// ── Page header ───────────────────────────────────────────────
+.page-header { margin-bottom: 3rem; max-width: 640px; }
+.eyebrow {
+  display: inline-block; font-size: .7rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .15em;
+  color: var(--primary); margin-bottom: .5rem;
+}
+.page-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 2.75rem; font-weight: 800;
+  color: var(--on-surface); letter-spacing: -.02em; margin: 0;
+}
+.page-sub {
+  color: var(--on-surface-var);
+  font-size: 1rem; line-height: 1.55;
+  margin-top: .6rem;
+  strong { color: var(--primary); font-weight: 700; }
+}
+
+// ── Content grid ──────────────────────────────────────────────
+.content-grid {
+  display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;
+}
+.col-left  { display: flex; flex-direction: column; gap: 2rem; }
+.col-right { display: flex; flex-direction: column; gap: 1.5rem; }
+
+// ── Current book card ────────────────────────────────────────
+.current-card {
+  position: relative;
+  display: flex; gap: 2rem;
+  background: var(--surface-lowest);
+  border-radius: 1.5rem; padding: 2rem;
+  box-shadow: 0 20px 40px -15px rgba(80,68,65,.15);
+  transition: transform .4s;
+}
+
+.carousel-btn {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--surface-lowest); border: 1.5px solid var(--outline-var);
+  cursor: pointer; z-index: 2;
+  display: grid; place-items: center;
+  color: var(--primary);
+  box-shadow: 0 4px 12px rgba(80,68,65,.15);
+  transition: all .15s;
+  .material-symbols-outlined { font-size: 1.4rem; }
+  &:hover {
+    background: var(--primary); color: #fff; border-color: var(--primary);
+    transform: translateY(-50%) scale(1.08);
+  }
+  &--prev { left: -22px; }
+  &--next { right: -22px; }
+}
+
+.header-top {
+  display: flex; align-items: center; gap: .5rem; margin-bottom: .5rem;
+  flex-wrap: wrap;
+}
+.btn-edit-book {
+  margin-left: auto;
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--surface-low); border: none;
+  display: grid; place-items: center;
+  color: var(--primary); text-decoration: none;
+  transition: all .15s;
+  .material-symbols-outlined { font-size: 1.1rem; }
+  &:hover { background: var(--primary); color: #fff; transform: scale(1.05); }
+}
+.carousel-dots {
+  display: inline-flex; align-items: center; gap: .3rem;
+  padding: .25rem .6rem; border-radius: 999px;
+  background: var(--surface-low);
+}
+.dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--outline-var);
+  transition: all .2s;
+  &--active { background: var(--primary); transform: scale(1.4); }
+}
+.dots-count {
+  font-size: .68rem; font-weight: 700; color: var(--on-surface-var);
+  margin-left: .35rem;
+}
+.hours-spent {
+  display: inline-flex; align-items: center; gap: .25rem;
+  color: var(--primary);
+  .material-symbols-outlined { font-size: .95rem; }
+}
+.cover-wrap {
+  flex-shrink: 0;
+  width: 180px; height: 270px;
+  border-radius: 1rem; overflow: hidden;
+  box-shadow: 0 16px 32px rgba(80,68,65,.25);
+  transition: transform .4s;
+  .current-card:hover & { transform: rotate(-1deg); }
+}
+.cover-img {
+  width: 100%; height: 100%; object-fit: cover;
+  display: block;
+}
+.cover-placeholder {
+  width: 100%; height: 100%;
+  background: linear-gradient(135deg, var(--primary-fixed), var(--primary-fixed-dim));
+  display: grid; place-items: center;
+  color: var(--primary);
+  .material-symbols-outlined { font-size: 3rem; }
+}
+.current-info {
+  flex: 1; display: flex; flex-direction: column; justify-content: space-between;
+  gap: 1.25rem; min-width: 0;
+}
+.badge {
+  display: inline-block;
+  background: var(--secondary-cont); color: var(--on-sec-cont);
+  padding: .25rem .8rem; border-radius: 999px;
+  font-size: .65rem; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .08em;
+  margin-bottom: .65rem;
+}
+.book-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1.9rem; font-weight: 800;
+  color: var(--on-surface);
+  letter-spacing: -.015em;
+  margin: 0;
+  line-height: 1.15;
+}
+.book-author {
+  font-size: 1rem; font-style: italic;
+  color: var(--on-surface-var);
+  margin-top: .35rem;
+}
+.book-summary {
+  font-size: .85rem; line-height: 1.55;
+  color: var(--on-surface-var);
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.progress-block { display: flex; flex-direction: column; gap: .5rem; }
+.progress-head {
+  display: flex; justify-content: space-between; align-items: flex-end;
+}
+.progress-label {
+  font-size: .82rem; font-weight: 700; color: var(--on-surface);
+}
+.progress-pct {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1.75rem; font-weight: 900;
+  color: var(--primary); letter-spacing: -.02em;
+}
+.progress-bar {
+  height: 12px; border-radius: 999px;
+  background: var(--surface-high2);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, var(--primary), var(--primary-cont));
+  transition: width .4s ease;
+}
+.progress-meta {
+  display: flex; justify-content: space-between;
+  font-size: .7rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em;
+  color: rgba(80,68,65,.6);
+}
+
+// ── Empty hero ────────────────────────────────────────────────
+.empty-hero {
+  background: var(--surface-lowest);
+  border-radius: 1.5rem; padding: 3.5rem 2rem;
+  text-align: center;
+  box-shadow: 0 20px 40px -15px rgba(80,68,65,.1);
+  .material-symbols-outlined {
+    font-size: 4rem; color: var(--primary); opacity: .4;
+  }
+  h3 {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 1.4rem; font-weight: 700;
+    color: var(--on-surface); margin-top: 1rem;
+  }
+  p { color: var(--on-surface-var); margin: .5rem 0 1.5rem 0; }
+  .btn-add-book { display: inline-flex; }
+}
+
+// ── Reading queue ─────────────────────────────────────────────
+.queue-section { display: flex; flex-direction: column; gap: 1.25rem; }
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.section-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1.35rem; font-weight: 800;
+  color: var(--on-surface);
+}
+.section-count {
+  font-size: .75rem; font-weight: 700;
+  color: var(--on-surface-var);
+  padding: .25rem .75rem;
+  background: var(--surface-mid);
+  border-radius: 999px;
+}
+.queue-row {
+  display: grid;
+  grid-template-columns: repeat(4, 160px);
+  gap: 1.5rem;
+}
+.queue-card {
+  width: 160px;
+  text-decoration: none; color: inherit;
+  transition: transform .3s;
+  &:hover { transform: translateY(-4px); }
+}
+.queue-cover {
+  width: 160px; height: 240px;
+  border-radius: .85rem; overflow: hidden;
+  box-shadow: 0 12px 24px rgba(80,68,65,.2);
+  margin-bottom: .75rem;
+  background: linear-gradient(135deg, var(--primary-fixed), var(--primary-fixed-dim));
+  img { width: 160px; height: 240px; object-fit: cover; display: block; }
+  .cover-placeholder {
+    width: 100%; height: 100%;
+    display: grid; place-items: center;
+  }
+}
+.queue-title {
+  font-size: .85rem; font-weight: 700; color: var(--on-surface);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin: 0;
+}
+.queue-author {
+  font-size: .68rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .06em;
+  color: var(--on-surface-var); margin-top: .2rem;
+}
+.empty-hint {
+  padding: 2rem; text-align: center;
+  background: var(--surface-low); border-radius: 1rem;
+  color: var(--on-surface-var); font-size: .85rem;
+}
+
+// ── Goal card ─────────────────────────────────────────────────
+.goal-card {
+  background: var(--primary); color: #fff;
+  border-radius: 1.5rem; padding: 2rem;
+  position: relative; overflow: hidden;
+  box-shadow: 0 20px 40px -10px rgba(119,85,61,.4);
+  &::after {
+    content: '';
+    position: absolute; right: -60px; bottom: -60px;
+    width: 180px; height: 180px;
+    background: var(--primary-cont); border-radius: 50%;
+    filter: blur(50px); opacity: .4;
+  }
+}
+.goal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  position: relative; z-index: 1;
+  margin-bottom: .25rem;
+}
+.goal-title {
+  font-size: .7rem; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .15em; opacity: .75;
+}
+.goal-edit-btn {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: rgba(255,255,255,.15); border: none; cursor: pointer;
+  color: #fff; display: grid; place-items: center;
+  transition: background .15s;
+  .material-symbols-outlined { font-size: 1rem; }
+  &:hover { background: rgba(255,255,255,.28); }
+}
+.goal-edit {
+  position: relative; z-index: 1;
+  padding: .25rem 0;
+}
+.goal-edit-label {
+  display: block; font-size: .72rem; opacity: .8;
+  margin-bottom: .6rem;
+}
+.goal-edit-row {
+  display: flex; gap: .5rem; align-items: center;
+}
+.goal-input {
+  flex: 1;
+  padding: .75rem 1.1rem;
+  border-radius: 999px; border: 2px solid rgba(255,255,255,.3);
+  background: rgba(255,255,255,.12);
+  color: #fff; font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1.1rem; font-weight: 700;
+  &::placeholder { color: rgba(255,255,255,.4); }
+  &:focus { outline: none; border-color: #fff; background: rgba(255,255,255,.22); }
+}
+.goal-save-btn, .goal-cancel-btn {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: none; cursor: pointer;
+  display: grid; place-items: center;
+  .material-symbols-outlined { font-size: 1.2rem; }
+}
+.goal-save-btn {
+  background: #fff; color: var(--primary);
+  &:hover { background: var(--primary-fixed); }
+}
+.goal-cancel-btn {
+  background: rgba(255,255,255,.15); color: #fff;
+  &:hover { background: rgba(255,255,255,.28); }
+}
+.goal-value {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 3.5rem; font-weight: 900;
+  letter-spacing: -.03em;
+  margin: .4rem 0 0 0;
+  position: relative; z-index: 1;
+  span { font-size: 1.5rem; opacity: .55; font-weight: 700; }
+}
+.goal-hint {
+  font-size: .8rem; line-height: 1.45;
+  color: var(--primary-fixed-dim);
+  margin: .6rem 0 1.25rem 0;
+  position: relative; z-index: 1;
+}
+.goal-bar {
+  height: 8px; border-radius: 999px;
+  background: rgba(255,255,255,.22);
+  position: relative; z-index: 1;
+  overflow: hidden;
+}
+.goal-fill {
+  height: 100%; border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 0 16px rgba(255,255,255,.5);
+  transition: width .4s;
+}
+
+// ── Bento stats ───────────────────────────────────────────────
+.bento {
+  display: grid; grid-template-columns: 1fr 1fr; gap: .85rem;
+}
+.bento-item {
+  background: var(--surface-low);
+  border-radius: 1rem; padding: 1.25rem;
+  display: flex; flex-direction: column; gap: .4rem;
+  .material-symbols-outlined {
+    color: var(--primary); font-size: 1.4rem;
+  }
+}
+.bento-value {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1.6rem; font-weight: 800;
+  color: var(--on-surface); letter-spacing: -.02em;
+}
+.bento-label {
+  font-size: .62rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .1em;
+  color: rgba(80,68,65,.6);
+}
+
+// ── Trends card ───────────────────────────────────────────────
+.trends-card {
+  background: var(--surface-mid);
+  border-radius: 1.25rem; padding: 1.75rem;
+}
+.trends-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1rem; font-weight: 800;
+  color: var(--on-surface);
+  display: flex; align-items: center; gap: .5rem;
+  margin-bottom: 1.25rem;
+  .material-symbols-outlined { color: var(--primary); font-size: 1.2rem; }
+}
+.trend-row {
+  display: flex; align-items: center; gap: .85rem;
+  padding: .6rem 0;
+  &:not(:last-child) { border-bottom: 1px dashed rgba(80,68,65,.15); }
+}
+.trend-icon {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--secondary-cont); color: var(--on-sec-cont);
+  display: grid; place-items: center; flex-shrink: 0;
+  .material-symbols-outlined { font-size: 1.1rem; }
+}
+.trend-head {
+  font-size: .82rem; font-weight: 700; color: var(--on-surface);
+}
+.trend-sub {
+  font-size: .7rem; color: var(--on-surface-var);
+  margin-top: .1rem;
+}
+
+// ── Skeletons ─────────────────────────────────────────────────
+.skeleton {
+  background: var(--surface-low);
+  border-radius: 1rem;
+  animation: pulse 1.4s ease-in-out infinite;
+  &--hero { height: 310px; }
+  &--card { flex-shrink: 0; width: 160px; height: 260px; }
+}
+@keyframes pulse { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
+
+// ── Responsive ────────────────────────────────────────────────
+@media (max-width: 900px) {
+  .content-grid { grid-template-columns: 1fr; }
+  .main         { padding: 1rem 1.25rem 3rem; }
+  .top-nav      { padding: 1rem 1.25rem; flex-wrap: wrap; gap: 1rem; }
+  .nav-links    { display: none; }
+  .current-card { flex-direction: column; gap: 1.25rem; padding: 1.5rem; }
+  .cover-wrap   { width: 140px; height: 210px; margin: 0 auto; }
+  .book-title   { font-size: 1.5rem; }
+  .page-title   { font-size: 2rem; }
+  .queue-row { grid-template-columns: repeat(3, 160px); gap: 1rem; }
+}
+@media (max-width: 600px) {
+  .queue-row { grid-template-columns: repeat(2, 140px); gap: .75rem; }
+  .queue-card { width: 140px; }
+  .queue-cover, .queue-cover img { width: 140px; height: 210px; }
+}

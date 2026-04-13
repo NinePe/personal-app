@@ -1,0 +1,219 @@
+<div class="page">
+  <div class="orb orb--tr"></div>
+  <div class="orb orb--bl"></div>
+
+  <!-- ── Nav ─────────────────────────────────────── -->
+  <nav class="top-nav">
+    <div class="nav-left">
+      <a class="nav-back" routerLink="/" title="Back to home"><span class="material-symbols-outlined">arrow_back</span></a>
+      <span class="nav-brand">Spending</span>
+      <div class="nav-links">
+        <a class="nav-link" routerLink="/income">Income</a>
+        <a class="nav-link" routerLink="/expenses">Expenses</a>
+        <a class="nav-link" routerLink="/payments">Payments</a>
+        <a class="nav-link" routerLink="/people">People</a>
+        <a class="nav-link" routerLink="/loans">Loans</a>
+        <a class="nav-link" routerLink="/places">Places</a>
+        <a class="nav-link" routerLink="/budget">Budget</a>
+        <a class="nav-link nav-link--active" routerLink="/savings">Savings</a>
+        <a class="nav-link" routerLink="/projections">Projections</a>
+      </div>
+    </div>
+    <div class="nav-right">
+      <a class="btn-add-income" routerLink="/new-income">
+        <span class="material-symbols-outlined">add</span>
+        Add Income
+      </a>
+      <a class="btn-add-expense" routerLink="/spending">
+        <span class="material-symbols-outlined">add</span>
+        Add Expense
+      </a>
+      <span class="material-symbols-outlined nav-icon">notifications</span>
+      <span class="material-symbols-outlined nav-icon">account_circle</span>
+    </div>
+  </nav>
+
+  <main class="main">
+    <div class="layout">
+
+      <!-- ── Left: preview ─────────────────────────── -->
+      <div class="preview-col">
+        <div class="preview-header">
+          <h1 class="preview-title">{{ isEdit() ? 'Edit Goal' : 'New Savings\nGoal' }}</h1>
+          <p class="preview-sub">{{ isEdit() ? 'Update your savings goal.' : 'Set a target and start tracking.' }}</p>
+        </div>
+
+        <!-- Goal preview card -->
+        <div class="goal-preview" [style.background]="gradientStyle()">
+          <div class="goal-preview__glow"></div>
+
+          <div class="goal-preview__top">
+            <div class="goal-preview__icon-circle">
+              <span class="material-symbols-outlined">{{ icon() }}</span>
+            </div>
+            <div>
+              <p class="goal-preview__label">Savings Goal</p>
+              <p class="goal-preview__name">{{ name().trim() || 'Your goal name' }}</p>
+            </div>
+          </div>
+
+          <div class="goal-preview__amount">{{ amountDisplay() }}</div>
+          <p class="goal-preview__sub">Target amount</p>
+
+          <!-- Progress bar (always at 0% for new) -->
+          <div class="goal-preview__bar-wrap">
+            <div class="goal-preview__bar">
+              <div class="goal-preview__bar-fill" style="width: 0%"></div>
+            </div>
+            <span class="goal-preview__bar-pct">0%</span>
+          </div>
+
+          <div class="goal-preview__footer">
+            @if (deadline()) {
+              <div class="goal-preview__meta">
+                <span class="material-symbols-outlined">event</span>
+                <span>{{ deadlineDisplay() }}</span>
+                @if ((monthsLeft() ?? 0) > 0) {
+                  <span>· {{ monthsLeft() }} months</span>
+                }
+              </div>
+            }
+            @if (monthlyNeeded()) {
+              <div class="goal-preview__meta">
+                <span class="material-symbols-outlined">trending_up</span>
+                <span>{{ fmt(monthlyNeeded()!) }}/month</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Feature chips -->
+        <div class="feature-grid">
+          <div class="feature-chip">
+            <span class="material-symbols-outlined feature-icon feature-icon--primary">track_changes</span>
+            <div>
+              <p class="feature-chip__title">Progress Tracking</p>
+              <p class="feature-chip__desc">Watch your savings grow over time</p>
+            </div>
+          </div>
+          <div class="feature-chip">
+            <span class="material-symbols-outlined feature-icon feature-icon--secondary">calendar_month</span>
+            <div>
+              <p class="feature-chip__title">Monthly Breakdown</p>
+              <p class="feature-chip__desc">Know exactly how much to save</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Right: form ───────────────────────────── -->
+      <div class="form-card">
+
+        <!-- Goal name -->
+        <div class="field-group">
+          <label class="field-label">Goal Name <span class="required">*</span></label>
+          <div class="input-wrap">
+            <input class="field-input" type="text" placeholder="e.g. Trip to Japan"
+                   [value]="name()"
+                   (input)="name.set($any($event.target).value)" />
+            <span class="material-symbols-outlined input-icon">edit_note</span>
+          </div>
+        </div>
+
+        <!-- Target amount -->
+        <div class="field-group">
+          <label class="field-label">Target Amount <span class="required">*</span></label>
+          <div class="amount-wrap">
+            <span class="amount-prefix">$</span>
+            <input class="amount-input" type="number" min="0" step="0.01" placeholder="0.00"
+                   [value]="targetAmount()"
+                   (input)="targetAmount.set($any($event.target).value)" />
+          </div>
+        </div>
+
+        <!-- Deadline -->
+        <div class="field-group">
+          <label class="field-label">Deadline <span class="field-label--opt">(optional)</span></label>
+          <div class="input-wrap">
+            <input class="field-input" type="date"
+                   [value]="deadline()"
+                   (change)="deadline.set($any($event.target).value)" />
+            <span class="material-symbols-outlined input-icon">calendar_today</span>
+          </div>
+        </div>
+
+        <!-- Icon picker -->
+        <div class="field-group">
+          <label class="field-label">Icon</label>
+          <div class="icon-grid">
+            @for (ic of ICONS; track ic.value) {
+              <button type="button" class="icon-btn"
+                      [class.active]="icon() === ic.value"
+                      [style.--ic]="color()"
+                      title="{{ ic.label }}"
+                      (click)="icon.set(ic.value)">
+                <span class="material-symbols-outlined">{{ ic.value }}</span>
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Color picker -->
+        <div class="field-group">
+          <label class="field-label">Color</label>
+          <div class="color-grid">
+            @for (c of COLORS; track c) {
+              <button type="button" class="color-swatch"
+                      [class.active]="color() === c"
+                      [style.background]="c"
+                      (click)="color.set(c)">
+                @if (color() === c) {
+                  <span class="material-symbols-outlined">check</span>
+                }
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Status (edit only) -->
+        @if (isEdit()) {
+          <div class="field-group">
+            <label class="field-label">Status</label>
+            <div class="status-options">
+              @for (s of [['active','Activa','play_circle'],['paused','Pausada','pause_circle'],['done','Completada','check_circle']] ; track s[0]) {
+                <button type="button" class="status-opt"
+                        [class.active]="status() === s[0]"
+                        (click)="status.set($any(s[0]))">
+                  <span class="material-symbols-outlined">{{ s[2] }}</span>
+                  {{ s[1] }}
+                </button>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Notes -->
+        <div class="field-group">
+          <label class="field-label">Notes <span class="field-label--opt">(optional)</span></label>
+          <textarea class="field-input field-textarea" placeholder="Why are you saving for this?"
+                    [value]="notes()"
+                    (input)="notes.set($any($event.target).value)"></textarea>
+        </div>
+
+        @if (errorMsg()) {
+          <div class="error-msg">{{ errorMsg() }}</div>
+        }
+
+        <!-- Actions -->
+        <div class="form-actions">
+          <button class="btn-save" [disabled]="!isValid() || saving()" (click)="save()">
+            <span class="material-symbols-outlined">savings</span>
+            {{ saving() ? 'Saving…' : (isEdit() ? 'Save Changes' : 'Create Goal') }}
+          </button>
+          <a class="btn-cancel" routerLink="/savings">Cancel</a>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>

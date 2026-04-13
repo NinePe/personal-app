@@ -1,0 +1,509 @@
+<div class="page">
+  <div class="orb orb--tr"></div>
+  <div class="orb orb--ml"></div>
+
+  <!-- ── Nav ─────────────────────────────────────── -->
+  <nav class="top-nav">
+    <div class="nav-left">
+      <a class="nav-back" routerLink="/" title="Back to home"><span class="material-symbols-outlined">arrow_back</span></a>
+      <span class="nav-brand">Spending</span>
+      <div class="nav-links">
+        <a class="nav-link" routerLink="/income">Income</a>
+        <a class="nav-link" routerLink="/expenses">Expenses</a>
+        <a class="nav-link nav-link--active" routerLink="/payments">Payments</a>
+        <a class="nav-link" routerLink="/people">People</a>
+        <a class="nav-link" routerLink="/loans">Loans</a>
+        <a class="nav-link" routerLink="/places">Places</a>
+        <a class="nav-link" routerLink="/budget">Budget</a>
+        <a class="nav-link" routerLink="/projections">Projections</a>
+      </div>
+    </div>
+    <div class="nav-right">
+      <a class="btn-add-income" routerLink="/new-income">
+        <span class="material-symbols-outlined">add</span>
+        Add Income
+      </a>
+      <a class="btn-add-expense" routerLink="/spending">
+        <span class="material-symbols-outlined">add</span>
+        Add Expense
+      </a>
+      <span class="material-symbols-outlined nav-icon">notifications</span>
+      <span class="material-symbols-outlined nav-icon">account_circle</span>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- ── Card selector strip ──────────────────────────────── -->
+    @if (cards().length) {
+      <div class="card-strip">
+        @for (c of cards(); track c.id) {
+          <button class="card-strip__item" [class.active]="selectedCard()?.id === c.id"
+                  (click)="selectCard(c)">
+            <div class="card-strip__swatch" [style.background]="cardGradient(c.color)">
+              <span class="material-symbols-outlined" style="font-size:.9rem;color:rgba(255,255,255,.7)">credit_card</span>
+            </div>
+            <div class="card-strip__info">
+              <p class="card-strip__name">{{ c.name }}</p>
+              <p class="card-strip__sub">**** {{ c.last_four }} · {{ c.type === 'credit' ? 'Credit' : 'Debit' }}</p>
+            </div>
+            @if (selectedCard()?.id === c.id) {
+              <span class="material-symbols-outlined card-strip__check">check_circle</span>
+            }
+          </button>
+        }
+        <a class="card-strip__add" routerLink="/new-card">
+          <span class="material-symbols-outlined">add_card</span>
+          New Card
+        </a>
+      </div>
+    }
+
+    <!-- ── Card header ──────────────────────────────── -->
+    @if (selectedCard(); as card) {
+      <section class="card-header">
+        <div class="card-header__info">
+          <div class="status-row">
+            <span class="badge-active">Active</span>
+            @if (card.billing_cycle_day) {
+              <span class="cycle-hint">Cycle closes day {{ card.billing_cycle_day }}</span>
+            }
+          </div>
+          <h1 class="card-title">{{ card.name }}</h1>
+          <p class="card-bank">{{ card.bank_name }}</p>
+        </div>
+
+        <div class="card-visual" [style.background]="cardGradient(card.color)">
+          <div class="card-visual__glow"></div>
+          <div class="card-visual__top">
+            <span class="material-symbols-outlined card-contactless" style="font-variation-settings:'FILL' 1">contactless</span>
+            <span class="card-network">{{ card.type === 'credit' ? 'CREDIT' : 'DEBIT' }}</span>
+          </div>
+          <div class="card-number">•••• •••• •••• {{ card.last_four }}</div>
+          <div class="card-visual__bottom">
+            <div>
+              <p class="card-detail-label">Card Holder</p>
+              <p class="card-detail-value">{{ card.holder_name }}</p>
+            </div>
+            @if (card.credit_limit) {
+              <div class="text-right">
+                <p class="card-detail-label">Limit</p>
+                <p class="card-detail-value">{{ fmt(card.credit_limit) }}</p>
+              </div>
+            }
+          </div>
+        </div>
+      </section>
+    }
+
+    <!-- ── Content grid ──────────────────────────────── -->
+    <div class="content-grid">
+
+      <!-- ── Left ──────────────────────────────────── -->
+      <div class="col-left">
+
+        @if (isDebit()) {
+
+          <!-- ── DEBIT: Monthly spending view ──────── -->
+          <div class="cycles-card">
+            <div class="cycles-card__header">
+              <div>
+                <h3 class="section-title">Monthly Spending</h3>
+                <p class="section-sub">{{ currentYear }} — click a month to see splits</p>
+              </div>
+            </div>
+
+            @if (loading()) {
+              @for (_ of [1,2,3,4,5]; track $index) {
+                <div class="cycle-skeleton"></div>
+              }
+            } @else {
+              <div class="cycles-list">
+                @for (stat of topMonthlyStats(); track stat.month) {
+                  <div class="cycle-item"
+                       [class.cycle-item--active]="isCurrentMonth(stat)"
+                       [class.cycle-item--selected]="isMonthSelected(stat)"
+                       (click)="selectMonth(stat)">
+
+                    <div class="cycle-item__left">
+                      <div class="cycle-icon" [class.cycle-icon--active]="isCurrentMonth(stat)">
+                        <span class="material-symbols-outlined">
+                          {{ isCurrentMonth(stat) ? 'calendar_today' : 'calendar_month' }}
+                        </span>
+                      </div>
+                      <div>
+                        <div class="cycle-title-row">
+                          <h4 class="cycle-name">{{ fmtMonth(stat.month, stat.year) }}</h4>
+                          @if (isCurrentMonth(stat)) {
+                            <span class="badge-current">CURRENT</span>
+                          }
+                        </div>
+                        <p class="cycle-dates">{{ fmtDate(stat.from_date) }} – {{ fmtDate(stat.to_date) }}</p>
+                      </div>
+                    </div>
+
+                    <div class="cycle-item__right">
+                      <div class="cycle-totals">
+                        <p class="cycle-total-label">{{ isCurrentMonth(stat) ? 'Accumulated' : 'Total' }}</p>
+                        <p class="cycle-total" [class.cycle-total--zero]="+stat.total === 0">{{ fmt(stat.total) }}</p>
+                      </div>
+                      @if (stat.count > 0) {
+                        <div class="month-meta">
+                          <span class="month-tx-count">{{ stat.count }} tx</span>
+                          @if (stat.split_count > 0) {
+                            <span class="month-split-badge" title="{{ stat.split_count }} split expense(s)">
+                              <span class="material-symbols-outlined">group</span>
+                            </span>
+                          }
+                        </div>
+                      }
+                    </div>
+
+                  </div>
+                }
+              </div>
+
+              @if (monthlyStats().length > 5) {
+                <a class="btn-view-all" [routerLink]="['/payments', selectedCard()?.id, 'cycles']">
+                  <span class="material-symbols-outlined">table_view</span>
+                  View all {{ monthlyStats().length }} months
+                  <span class="material-symbols-outlined">arrow_forward</span>
+                </a>
+              }
+            }
+          </div>
+
+        } @else {
+
+          <!-- ── CREDIT: Billing cycles view ───────── -->
+          <div class="cycles-card">
+            <div class="cycles-card__header">
+              <div>
+                <h3 class="section-title">Billing Cycles</h3>
+                <p class="section-sub">Spending periods for this card</p>
+              </div>
+              <button class="btn-new-cycle" (click)="openNewForm()">
+                <span class="material-symbols-outlined">add</span>
+                New Cycle
+              </button>
+            </div>
+
+            <!-- New cycle form -->
+            @if (showNewForm()) {
+              <div class="cycle-form cycle-form--new">
+                <div class="cycle-form__grid">
+                  <div class="cycle-form__field">
+                    <label class="cycle-form__label">Name</label>
+                    <input class="cycle-form__input" type="text" placeholder="e.g. April 2026"
+                           [value]="newForm().name"
+                           (input)="setNewField('name', $any($event.target).value)" />
+                  </div>
+                  <div class="cycle-form__field">
+                    <label class="cycle-form__label">From</label>
+                    <input class="cycle-form__input" type="date"
+                           [value]="newForm().from_date"
+                           (change)="setNewField('from_date', $any($event.target).value)" />
+                  </div>
+                  <div class="cycle-form__field">
+                    <label class="cycle-form__label">To</label>
+                    <input class="cycle-form__input" type="date"
+                           [value]="newForm().to_date"
+                           (change)="setNewField('to_date', $any($event.target).value)" />
+                  </div>
+                </div>
+                <div class="cycle-form__actions">
+                  <button class="btn-cycle-save" [disabled]="saving()" (click)="saveNew()">
+                    {{ saving() ? 'Saving…' : 'Create Cycle' }}
+                  </button>
+                  <button class="btn-cycle-cancel" (click)="cancelNew()">Cancel</button>
+                </div>
+              </div>
+            }
+
+            <!-- Cycles list -->
+            @if (loading()) {
+              @for (_ of [1,2,3]; track $index) {
+                <div class="cycle-skeleton"></div>
+              }
+            } @else if (!cycles().length) {
+              <div class="cycles-empty">
+                <span class="material-symbols-outlined">event_repeat</span>
+                <p>No billing cycles yet.</p>
+                <button class="btn-new-cycle" (click)="openNewForm()">Create First Cycle</button>
+              </div>
+            } @else {
+              <div class="cycles-list">
+                @for (cycle of cycles().slice(0, 5); track cycle.id) {
+                  <div class="cycle-item" [class.cycle-item--active]="isCycleActive(cycle)"
+                       [class.cycle-item--selected]="selectedCycleId() === cycle.id">
+
+                    @if (editingId() === cycle.id) {
+                      <div class="cycle-edit-form">
+                        <div class="cycle-form__grid">
+                          <div class="cycle-form__field">
+                            <label class="cycle-form__label">Name</label>
+                            <input class="cycle-form__input" type="text"
+                                   [value]="editForm().name"
+                                   (input)="setEditField('name', $any($event.target).value)" />
+                          </div>
+                          <div class="cycle-form__field">
+                            <label class="cycle-form__label">From</label>
+                            <input class="cycle-form__input" type="date"
+                                   [value]="editForm().from_date"
+                                   (change)="setEditField('from_date', $any($event.target).value)" />
+                          </div>
+                          <div class="cycle-form__field">
+                            <label class="cycle-form__label">To</label>
+                            <input class="cycle-form__input" type="date"
+                                   [value]="editForm().to_date"
+                                   (change)="setEditField('to_date', $any($event.target).value)" />
+                          </div>
+                        </div>
+                        <div class="cycle-form__actions">
+                          <button class="btn-cycle-save" [disabled]="saving()" (click)="saveEdit(cycle)">
+                            {{ saving() ? 'Saving…' : 'Save Changes' }}
+                          </button>
+                          <button class="btn-cycle-cancel" (click)="cancelEdit()">Cancel</button>
+                          <button class="btn-cycle-delete" (click)="deleteCycle(cycle.id)" title="Delete cycle">
+                            <span class="material-symbols-outlined">delete</span>
+                          </button>
+                        </div>
+                      </div>
+                    } @else {
+                      <div class="cycle-item__left" (click)="selectCycle(cycle)">
+                        <div class="cycle-icon" [class.cycle-icon--active]="isCycleActive(cycle)">
+                          <span class="material-symbols-outlined">
+                            {{ isCycleActive(cycle) ? 'calendar_today' : 'event_repeat' }}
+                          </span>
+                        </div>
+                        <div>
+                          <div class="cycle-title-row">
+                            <h4 class="cycle-name">{{ cycle.name }}</h4>
+                            @if (isCycleActive(cycle)) {
+                              <span class="badge-current">CURRENT</span>
+                            }
+                            @if (cycle.paid) {
+                              <span class="badge-paid">PAID</span>
+                            }
+                          </div>
+                          <p class="cycle-dates">{{ fmtDate(cycle.from_date) }} – {{ fmtDate(cycle.to_date) }}</p>
+                        </div>
+                      </div>
+                      <div class="cycle-item__right">
+                        <div class="cycle-totals" (click)="selectCycle(cycle)">
+                          <p class="cycle-total-label">{{ isCycleActive(cycle) ? 'Accumulated' : 'Total' }}</p>
+                          <p class="cycle-total" [class.cycle-total--paid]="cycle.paid">{{ fmt(cycle.total) }}</p>
+                        </div>
+                        <button class="cycle-paid-btn" [class.cycle-paid-btn--on]="cycle.paid"
+                                (click)="toggleCyclePaid(cycle, $event)"
+                                [title]="cycle.paid ? 'Mark as unpaid' : 'Mark as paid'">
+                          <span class="material-symbols-outlined">
+                            {{ cycle.paid ? 'task_alt' : 'radio_button_unchecked' }}
+                          </span>
+                        </button>
+                        <button class="cycle-edit-btn" (click)="startEdit(cycle)" title="Edit dates">
+                          <span class="material-symbols-outlined">edit</span>
+                        </button>
+                      </div>
+                    }
+
+                  </div>
+                }
+              </div>
+
+              @if (cycles().length > 5) {
+                <a class="btn-view-all" [routerLink]="['/payments', selectedCard()?.id, 'cycles']">
+                  <span class="material-symbols-outlined">table_view</span>
+                  View all {{ cycles().length }} cycles
+                  <span class="material-symbols-outlined">arrow_forward</span>
+                </a>
+              }
+            }
+          </div>
+
+        }
+
+        <!-- Bento grid -->
+        <div class="bento-grid">
+          <div class="bento-item bento-item--tertiary">
+            <span class="material-symbols-outlined bento-icon">account_balance_wallet</span>
+            <p class="bento-label">{{ isDebit() ? 'Balance' : 'Available Credit' }}</p>
+            <h4 class="bento-value">
+              {{ availableCredit() != null ? fmt(availableCredit()!) : '—' }}
+            </h4>
+            @if (!isDebit() && selectedCard()?.credit_limit) {
+              <p class="bento-sub">of {{ fmt(selectedCard()!.credit_limit!) }} limit</p>
+            }
+          </div>
+          @if (!isDebit() && selectedCard()?.credit_limit) {
+            <div class="bento-item bento-item--credit-used">
+              <span class="material-symbols-outlined bento-icon">credit_card_off</span>
+              <p class="bento-label">Consumed (unpaid)</p>
+              <h4 class="bento-value">
+                {{ consumedCredit() != null ? fmt(consumedCredit()!) : '—' }}
+              </h4>
+              @if (creditUsagePct() != null) {
+                <div class="bento-bar">
+                  <div class="bento-bar__fill"
+                       [style.width]="creditUsagePct() + '%'"
+                       [class.bento-bar__fill--high]="(creditUsagePct() ?? 0) >= 80"></div>
+                </div>
+                <p class="bento-sub">{{ creditUsagePct()!.toFixed(0) }}% used</p>
+              }
+            </div>
+          } @else {
+            <div class="bento-item bento-item--secondary">
+              <span class="material-symbols-outlined bento-icon">receipt_long</span>
+              <p class="bento-label">Transactions</p>
+              <h4 class="bento-value">{{ currentCount() }}</h4>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- ── Right ──────────────────────────────────── -->
+      <div class="col-right">
+        <div class="split-card">
+          <h3 class="section-title">Split Spending Breakdown</h3>
+          <p class="section-sub">{{ activePeriodLabel() }}</p>
+
+          @if (splitLoading()) {
+            <div class="skeleton-block"></div>
+          } @else if (splitPeople().length) {
+            <!-- Stacked bar -->
+            <div class="split-bar">
+              @for (p of splitPeople().slice(0, 5); track p.name; let i = $index) {
+                <div class="split-bar__seg"
+                     [style.width]="p.percentage.toFixed(1) + '%'"
+                     [style.background]="SPLIT_COLORS[i % SPLIT_COLORS.length]">
+                </div>
+              }
+            </div>
+
+            <!-- People -->
+            <div class="split-people">
+              @for (p of splitPeople(); track p.name; let i = $index) {
+                <div class="split-person" (click)="openSplitDetail(p)" style="cursor:pointer">
+                  <div class="split-person__left">
+                    <div class="split-avatar"
+                         [style.border-color]="SPLIT_COLORS[i % SPLIT_COLORS.length]"
+                         [style.background]="SPLIT_COLORS[i % SPLIT_COLORS.length] + '22'">
+                      <span [style.color]="SPLIT_COLORS[i % SPLIT_COLORS.length]">{{ initial(p.name) }}</span>
+                    </div>
+                    <div>
+                      <p class="split-person__name">{{ p.name }}</p>
+                      <p class="split-person__pct">{{ p.percentage.toFixed(0) }}% of total</p>
+                    </div>
+                  </div>
+                  <div class="split-person__right">
+                    <p class="split-person__amount" [style.color]="SPLIT_COLORS[i % SPLIT_COLORS.length]">
+                      {{ fmt(p.amount) }}
+                    </p>
+                    <p class="split-person__count">{{ p.expense_count }} expense{{ +p.expense_count !== 1 ? 's' : '' }}</p>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Click on a person to see their expenses -->
+            <div class="split-footer">
+              <button class="btn-manage-splits" (click)="openSplitDetail()">
+                View All Expenses
+                <span class="material-symbols-outlined">arrow_forward</span>
+              </button>
+            </div>
+          } @else if (!loading()) {
+            <div class="empty-state">
+              <span class="material-symbols-outlined empty-icon">group</span>
+              <p>No split expenses for this period</p>
+            </div>
+          } @else {
+            <div class="skeleton-block"></div>
+          }
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ══════════════════════════════════════════════
+       SPLIT DETAIL MODAL
+  ══════════════════════════════════════════════ -->
+  @if (showSplitDetail()) {
+    <div class="modal-backdrop" (click)="closeSplitDetail()">
+      <div class="modal-split" (click)="$event.stopPropagation()">
+        <div class="modal-split__head">
+          <div>
+            <h3>
+              @if (splitDetailPerson(); as p) {
+                {{ p.name }} — Expenses
+              } @else {
+                All Split Expenses
+              }
+            </h3>
+            <p class="modal-split__sub">{{ activePeriodLabel() }} · {{ splitDetailRows().length }} items</p>
+          </div>
+          <button class="modal-close" (click)="closeSplitDetail()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        @if (splitDetailLoading()) {
+          <div class="modal-split__loading">
+            @for (_ of [1,2,3,4]; track $index) {
+              <div class="skel-row"></div>
+            }
+          </div>
+        } @else if (!splitDetailRows().length) {
+          <div class="modal-split__empty">
+            <span class="material-symbols-outlined">receipt_long</span>
+            <p>No expenses found for this period.</p>
+          </div>
+        } @else {
+          <div class="modal-split__table-wrap">
+            <table class="split-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Category</th>
+                  <th>Description</th>
+                  <th>Person</th>
+                  <th class="th-right">Split Amount</th>
+                  <th class="th-right">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of splitDetailRows(); track row.id + (row.person?.id ?? 'me')) {
+                  <tr>
+                    <td class="td-date">{{ fmtShortDate(row.transaction_date) }}</td>
+                    <td>
+                      <span class="td-cat">
+                        <span class="material-symbols-outlined">{{ row.category.icon || 'more_horiz' }}</span>
+                        {{ row.category.name }}
+                      </span>
+                    </td>
+                    <td class="td-desc">{{ row.description || row.place?.name || '—' }}</td>
+                    <td>
+                      <span class="td-person" [class.td-person--me]="row.is_me">
+                        {{ row.is_me ? 'Me' : (row.person?.name ?? '—') }}
+                      </span>
+                    </td>
+                    <td class="td-right td-amount">{{ fmt(row.split_amount) }}</td>
+                    <td class="td-right td-total-light">{{ fmt(row.expense_total) }}</td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="4" class="tf-label">Total</td>
+                  <td class="td-right tf-amount">{{ fmt(splitDetailTotal()) }}</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

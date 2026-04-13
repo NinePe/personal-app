@@ -1,0 +1,417 @@
+<div class="page">
+  <div class="orb orb--tr"></div>
+
+  <!-- ── Nav ─────────────────────────────────────── -->
+  <nav class="top-nav">
+    <div class="nav-left">
+      <a class="nav-back" routerLink="/reading" title="Back to library">
+        <span class="material-symbols-outlined">arrow_back</span>
+      </a>
+      <span class="nav-brand">Reading</span>
+      <div class="nav-links">
+        <a class="nav-link" routerLink="/reading">Library</a>
+        <a class="nav-link nav-link--active" routerLink="/reading/new-book">Add Book</a>
+      </div>
+    </div>
+    <div class="nav-right">
+      <a class="btn-discard" routerLink="/reading">Discard</a>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- ── Header ──────────────────────────────── -->
+    <header class="page-header">
+      <span class="eyebrow">{{ isEdit() ? 'Editing' : 'New Addition' }}</span>
+      <h1 class="page-title">{{ isEdit() ? 'Edit Book' : 'New Book' }}</h1>
+      <p class="page-sub">Catalog a new soul to your private library.</p>
+    </header>
+
+    <div class="layout">
+
+      <!-- ── LEFT — cover + ownership ─────── -->
+      <aside class="col-cover">
+        <label class="field-label">Book Cover</label>
+        <div class="cover-upload">
+          @if (coverUrl()) {
+            <img [src]="coverUrl()" alt="Cover" class="cover-img" />
+            <button class="cover-clear" (click)="coverUrl.set('')">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          } @else {
+            <div class="cover-empty">
+              <span class="material-symbols-outlined">upload_file</span>
+              <p>Upload or paste URL</p>
+              <p class="hint">JPEG / PNG / WEBP</p>
+            </div>
+          }
+        </div>
+        <input class="cover-url-input" type="url" placeholder="Paste cover URL…"
+               [value]="coverUrl()"
+               (input)="coverUrl.set($any($event.target).value)" />
+
+        <!-- Physical ownership toggle -->
+        <div class="toggle-card">
+          <div class="toggle-info">
+            <span class="toggle-title">Physical Ownership</span>
+            <p class="toggle-hint">You own a physical copy of this book.</p>
+          </div>
+          <button class="toggle" [class.on]="isPhysical()"
+                  (click)="isPhysical.set(!isPhysical())">
+            <span class="toggle-dot"></span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- ── RIGHT — fields ──────────────── -->
+      <section class="col-fields">
+
+        <!-- Status chips -->
+        <div class="field-group">
+          <label class="field-label">Status</label>
+          <div class="chips">
+            @for (s of [
+              { v: 'queued',    l: 'Queued',   i: 'schedule' },
+              { v: 'reading',   l: 'Reading',  i: 'auto_stories' },
+              { v: 'completed', l: 'Completed',i: 'check_circle' },
+              { v: 'paused',    l: 'Paused',   i: 'pause_circle' },
+              { v: 'dropped',   l: 'Dropped',  i: 'cancel' }
+            ]; track s.v) {
+              <button class="chip" [class.chip--active]="status() === s.v"
+                      (click)="status.set($any(s.v))">
+                <span class="material-symbols-outlined">{{ s.i }}</span>
+                {{ s.l }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Rating (visible when completed) -->
+        @if (status() === 'completed') {
+          <div class="field-group">
+            <label class="field-label">Rating</label>
+            <app-star-rating class="lg"
+              [value]="rating() ?? 0"
+              [showLabel]="true"
+              (valueChange)="rating.set($event)" />
+          </div>
+        }
+
+        <!-- Title / Subtitle -->
+        <div class="field-group">
+          <label class="field-label">Title *</label>
+          <input class="input" type="text" placeholder="The Midnight Library"
+                 [value]="title()"
+                 (input)="title.set($any($event.target).value)" />
+        </div>
+        <div class="field-group">
+          <label class="field-label">Subtitle</label>
+          <input class="input" type="text" placeholder="Optional"
+                 [value]="subtitle()"
+                 (input)="subtitle.set($any($event.target).value)" />
+        </div>
+
+        <!-- Authors -->
+        <div class="field-group">
+          <label class="field-label">Authors</label>
+          <div class="authors-selected">
+            @for (a of selectedAuthors(); track a.id) {
+              <span class="author-pill">
+                <span class="author-avatar">{{ initial(a.name) }}</span>
+                <span>{{ a.name }}</span>
+                <button class="pill-x" (click)="toggleAuthor(a)">
+                  <span class="material-symbols-outlined">close</span>
+                </button>
+              </span>
+            }
+            <button class="btn-pick" (click)="openAuthorModal()">
+              <span class="material-symbols-outlined">person_add</span>
+              {{ selectedAuthors().length ? 'Add another' : 'Pick authors' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Publisher + Page count -->
+        <div class="row-2">
+          <div class="field-group">
+            <label class="field-label">Editorial / Publisher</label>
+            <input class="input" type="text" placeholder="Penguin Books"
+                   [value]="publisher()"
+                   (input)="publisher.set($any($event.target).value)" />
+          </div>
+          <div class="field-group">
+            <label class="field-label">Page Count</label>
+            <input class="input" type="number" placeholder="304" min="1"
+                   [value]="pageCount() ?? ''"
+                   (input)="pageCount.set(+$any($event.target).value || null)" />
+          </div>
+        </div>
+
+        <!-- Current page (only if reading) -->
+        @if (status() === 'reading') {
+          <div class="field-group">
+            <label class="field-label">Current Page</label>
+            <input class="input" type="number" placeholder="0" min="0"
+                   [value]="currentPage() ?? ''"
+                   (input)="currentPage.set(+$any($event.target).value || null)" />
+          </div>
+        }
+
+        <!-- Type + Format -->
+        <div class="row-2">
+          <div class="field-group">
+            <label class="field-label">Type</label>
+            <select class="select"
+                    [value]="bookTypeId() ?? ''"
+                    (change)="bookTypeId.set($any($event.target).value || null)">
+              <option value="">— Select type —</option>
+              @for (bt of bookTypes(); track bt.id) {
+                <option [value]="bt.id">{{ bt.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Format</label>
+            <select class="select"
+                    [value]="formatId() ?? ''"
+                    (change)="formatId.set($any($event.target).value || null)">
+              <option value="">— Select format —</option>
+              @for (f of formats(); track f.id) {
+                <option [value]="f.id">{{ f.name }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <!-- Genres -->
+        <div class="field-group">
+          <label class="field-label">Genres</label>
+          <div class="genres-selected">
+            @for (g of selectedGenres(); track g.id) {
+              <span class="genre-pill">
+                {{ g.name }}
+                <button class="pill-x" (click)="removeGenre(g)">
+                  <span class="material-symbols-outlined">close</span>
+                </button>
+              </span>
+            }
+          </div>
+          <div class="genre-search">
+            <input class="input" type="text" placeholder="Search or type to add a new genre…"
+                   [value]="newGenreName()"
+                   (input)="newGenreName.set($any($event.target).value)"
+                   (keydown.enter)="createAndAddGenre()" />
+            @if (newGenreName().trim() && !filteredGenres().length) {
+              <button class="btn-inline-add" (click)="createAndAddGenre()">
+                <span class="material-symbols-outlined">add</span>
+                Create "{{ newGenreName() }}"
+              </button>
+            }
+          </div>
+          @if (filteredGenres().length) {
+            <div class="genre-options">
+              @for (g of filteredGenres(); track g.id) {
+                <button class="genre-option" (click)="toggleGenre(g)">
+                  {{ g.name }}
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Is saga -->
+        <div class="field-group">
+          <label class="saga-toggle">
+            <input type="checkbox" [checked]="isSaga()"
+                   (change)="isSaga.set($any($event.target).checked); !$any($event.target).checked && clearSaga()" />
+            <span class="saga-box"></span>
+            <span>This book is part of a saga / series</span>
+          </label>
+        </div>
+
+        @if (isSaga()) {
+          <div class="saga-block">
+            <div class="row-saga">
+              <div class="field-group saga-main">
+                <label class="field-label">Saga</label>
+                <button class="btn-picker" (click)="openSagaModal()">
+                  @if (currentSaga(); as s) {
+                    <span class="picker-selected">
+                      <span class="material-symbols-outlined">bookmark</span>
+                      {{ s.name }}
+                    </span>
+                  } @else {
+                    <span class="picker-empty">
+                      <span class="material-symbols-outlined">search</span>
+                      Pick or create a saga
+                    </span>
+                  }
+                  <span class="material-symbols-outlined picker-chev">expand_more</span>
+                </button>
+              </div>
+              <div class="field-group saga-vol">
+                <label class="field-label">Volume #</label>
+                <input class="input" type="number" placeholder="1" min="1"
+                       [value]="sagaVolume() ?? ''"
+                       (input)="sagaVolume.set(+$any($event.target).value || null)" />
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Summary / notes -->
+        <div class="field-group">
+          <label class="field-label">Summary</label>
+          <textarea class="textarea" rows="3" placeholder="What is this book about?"
+                    [value]="summary()"
+                    (input)="summary.set($any($event.target).value)"></textarea>
+        </div>
+
+        <!-- Submit -->
+        <div class="form-actions">
+          @if (error()) {
+            <p class="error-msg">{{ error() }}</p>
+          }
+          <button class="btn-save" [disabled]="!canSave() || saving()" (click)="save()">
+            @if (saving()) { Saving… }
+            @else { {{ isEdit() ? 'Update Book' : 'Save to Library' }} }
+            <span class="material-symbols-outlined">arrow_forward</span>
+          </button>
+        </div>
+      </section>
+    </div>
+
+  </main>
+
+  <!-- ══════════════════════════════════════════════
+       AUTHOR MODAL
+  ══════════════════════════════════════════════ -->
+  @if (openModal() === 'author') {
+    <div class="modal-backdrop" (click)="closeModal()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-head">
+          <h3>Pick authors</h3>
+          <button class="modal-close" (click)="closeModal()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <input class="modal-search" type="text" placeholder="Search authors…"
+               [value]="modalQuery()"
+               (input)="modalQuery.set($any($event.target).value)" autofocus />
+
+        <div class="modal-list">
+          @for (a of filteredAuthors(); track a.id) {
+            <button class="modal-item" [class.selected]="isAuthorSelected(a)"
+                    (click)="toggleAuthor(a)">
+              <span class="modal-avatar">{{ initial(a.name) }}</span>
+              <div class="modal-item-info">
+                <p class="modal-item-name">{{ a.name }}</p>
+                <p class="modal-item-sub">
+                  @if (a.gender) { {{ genderLabel(a.gender) }} }
+                  @if (a.gender && a.origin_place) { · }
+                  @if (a.origin_place) { {{ a.origin_place }} }
+                  @if (!a.gender && !a.origin_place) { No details }
+                </p>
+              </div>
+              @if (isAuthorSelected(a)) {
+                <span class="material-symbols-outlined modal-check">check_circle</span>
+              }
+            </button>
+          }
+          @if (!filteredAuthors().length && !showAuthorForm()) {
+            <div class="modal-empty">
+              <p>No authors match "{{ modalQuery() }}".</p>
+            </div>
+          }
+        </div>
+
+        <!-- Inline author creation -->
+        @if (showAuthorForm()) {
+          <div class="modal-form">
+            <input class="input" type="text" placeholder="Author name"
+                   [value]="newAuthorName()"
+                   (input)="newAuthorName.set($any($event.target).value)" />
+            <div class="row-2">
+              <select class="select"
+                      [value]="newAuthorGender() ?? ''"
+                      (change)="newAuthorGender.set($any($event.target).value || null)">
+                <option value="">— Gender —</option>
+                <option value="female">Female</option>
+                <option value="male">Male</option>
+                <option value="non_binary">Non-binary</option>
+                <option value="trans">Trans</option>
+                <option value="other">Other</option>
+              </select>
+              <input class="input" type="text" placeholder="Origin place"
+                     [value]="newAuthorOrigin()"
+                     (input)="newAuthorOrigin.set($any($event.target).value)" />
+            </div>
+            <div class="modal-form-actions">
+              <button class="btn-save-sm" (click)="saveNewAuthor()">Create author</button>
+              <button class="btn-cancel-sm" (click)="showAuthorForm.set(false)">Cancel</button>
+            </div>
+          </div>
+        } @else {
+          <button class="modal-add" (click)="showAuthorForm.set(true)">
+            <span class="material-symbols-outlined">person_add</span>
+            Add new author
+          </button>
+        }
+
+        <div class="modal-footer">
+          <button class="btn-save-sm" (click)="closeModal()">Done</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ══════════════════════════════════════════════
+       SAGA MODAL
+  ══════════════════════════════════════════════ -->
+  @if (openModal() === 'saga') {
+    <div class="modal-backdrop" (click)="closeModal()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-head">
+          <h3>Pick a saga</h3>
+          <button class="modal-close" (click)="closeModal()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <input class="modal-search" type="text" placeholder="Search or type a new saga…"
+               [value]="modalQuery()"
+               (input)="modalQuery.set($any($event.target).value)" autofocus />
+
+        <div class="modal-list">
+          @for (s of filteredSagas(); track s.id) {
+            <button class="modal-item" [class.selected]="sagaId() === s.id"
+                    (click)="pickSaga(s)">
+              <span class="modal-avatar">
+                <span class="material-symbols-outlined">bookmark</span>
+              </span>
+              <div class="modal-item-info">
+                <p class="modal-item-name">{{ s.name }}</p>
+                <p class="modal-item-sub">{{ s.book_count ?? 0 }} {{ s.book_count === 1 ? 'book' : 'books' }}</p>
+              </div>
+              @if (sagaId() === s.id) {
+                <span class="material-symbols-outlined modal-check">check_circle</span>
+              }
+            </button>
+          }
+          @if (!filteredSagas().length && modalQuery().trim()) {
+            <button class="modal-create-new" (click)="saveNewSaga()">
+              <span class="material-symbols-outlined">add_circle</span>
+              Create saga "{{ modalQuery() }}"
+            </button>
+          }
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-cancel-sm" (click)="clearSaga(); closeModal()">Clear selection</button>
+          <button class="btn-save-sm" (click)="closeModal()">Done</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

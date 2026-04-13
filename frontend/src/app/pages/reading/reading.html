@@ -1,0 +1,272 @@
+<div class="page">
+  <div class="orb orb--tr"></div>
+  <div class="orb orb--bl"></div>
+
+  <!-- ── Nav ─────────────────────────────────────── -->
+  <nav class="top-nav">
+    <div class="nav-left">
+      <a class="nav-back" routerLink="/" title="Back to home">
+        <span class="material-symbols-outlined">arrow_back</span>
+      </a>
+      <span class="nav-brand">Reading</span>
+      <div class="nav-links">
+        <a class="nav-link nav-link--active" routerLink="/reading">Library</a>
+        <a class="nav-link" routerLink="/reading/completed">Completed</a>
+        <a class="nav-link" routerLink="/reading/authors">Authors</a>
+        <a class="nav-link" routerLink="/reading/sagas">Sagas</a>
+        <a class="nav-link" routerLink="/reading/genres">Genres</a>
+      </div>
+    </div>
+    <div class="nav-right">
+      <a class="btn-read-now" routerLink="/reading/session">
+        <span class="material-symbols-outlined">play_circle</span>
+        Read Now
+      </a>
+      <a class="btn-add-book" routerLink="/reading/new-book">
+        <span class="material-symbols-outlined">add</span>
+        Add Book
+      </a>
+      <span class="material-symbols-outlined nav-icon">notifications</span>
+      <span class="material-symbols-outlined nav-icon">account_circle</span>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- ── Welcome header ──────────────────────────── -->
+    <header class="page-header">
+      <span class="eyebrow">Curated for you</span>
+      <h1 class="page-title">{{ greetingTime() }}, Hans.</h1>
+      <p class="page-sub">
+        @if (currentBook()) {
+          You're {{ progressPct() }}% through
+          <strong>{{ currentBook()!.title }}</strong> — keep the rhythm alive.
+        } @else {
+          Your sanctuary awaits. Pick a book from your queue or add a new one.
+        }
+      </p>
+    </header>
+
+    <!-- ── Grid ─────────────────────────────────── -->
+    <div class="content-grid">
+
+      <!-- ── LEFT: currently reading + queue ───── -->
+      <div class="col-left">
+
+        <!-- Currently reading card -->
+        @if (loading()) {
+          <div class="skeleton skeleton--hero"></div>
+        } @else if (currentBook(); as book) {
+          <div class="current-card">
+            @if (hasMultipleReading()) {
+              <button class="carousel-btn carousel-btn--prev" (click)="prevBook()"
+                      title="Previous book">
+                <span class="material-symbols-outlined">chevron_left</span>
+              </button>
+              <button class="carousel-btn carousel-btn--next" (click)="nextBook()"
+                      title="Next book">
+                <span class="material-symbols-outlined">chevron_right</span>
+              </button>
+            }
+
+            <div class="cover-wrap">
+              @if (book.cover_url) {
+                <img [src]="book.cover_url" [alt]="book.title" class="cover-img" />
+              } @else {
+                <div class="cover-placeholder">
+                  <span class="material-symbols-outlined">auto_stories</span>
+                </div>
+              }
+            </div>
+            <div class="current-info">
+              <div class="current-header">
+                <div class="header-top">
+                  <span class="badge">Currently Reading</span>
+                  @if (hasMultipleReading()) {
+                    <span class="carousel-dots">
+                      @for (b of reading(); track b.id; let i = $index) {
+                        <span class="dot" [class.dot--active]="i === currentIdx()"></span>
+                      }
+                      <span class="dots-count">{{ currentIdx() + 1 }} / {{ reading().length }}</span>
+                    </span>
+                  }
+                  <a class="btn-edit-book" [routerLink]="['/reading/new-book', book.id]" title="Edit book">
+                    <span class="material-symbols-outlined">edit</span>
+                  </a>
+                </div>
+                <h3 class="book-title">{{ book.title }}</h3>
+                <p class="book-author">by {{ authorNames(book) }}</p>
+              </div>
+
+              @if (book.summary) {
+                <p class="book-summary">{{ book.summary }}</p>
+              }
+
+              <div class="progress-block">
+                <div class="progress-head">
+                  <span class="progress-label">Reading Progress</span>
+                  <span class="progress-pct">{{ progressPct() }}%</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill" [style.width]="progressPct() + '%'"></div>
+                </div>
+                <div class="progress-meta">
+                  <span>Page {{ book.current_page ?? 0 }} of {{ book.page_count ?? '—' }}</span>
+                  <span class="hours-spent">
+                    <span class="material-symbols-outlined">schedule</span>
+                    {{ formatHoursSpent() }} spent
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        } @else {
+          <div class="empty-hero">
+            <span class="material-symbols-outlined">menu_book</span>
+            <h3>No book in progress</h3>
+            <p>Start reading one from your queue or add a new one to your library.</p>
+            <a class="btn-add-book" routerLink="/reading/new-book">
+              <span class="material-symbols-outlined">add</span>
+              Add your first book
+            </a>
+          </div>
+        }
+
+        <!-- Reading queue -->
+        <div class="queue-section">
+          <div class="section-header">
+            <h4 class="section-title">Reading Queue</h4>
+            <span class="section-count">{{ queued().length }} books</span>
+          </div>
+          @if (loading()) {
+            <div class="queue-row">
+              @for (_ of [1,2,3,4]; track $index) {
+                <div class="skeleton skeleton--card"></div>
+              }
+            </div>
+          } @else if (!queued().length) {
+            <p class="empty-hint">No books in queue. Add some to start planning your next reads.</p>
+          } @else {
+            <div class="queue-row">
+              @for (b of queued(); track b.id) {
+                <a class="queue-card" [routerLink]="['/reading/new-book', b.id]">
+                  <div class="queue-cover">
+                    @if (b.cover_url) {
+                      <img [src]="b.cover_url" [alt]="b.title" />
+                    } @else {
+                      <div class="cover-placeholder">
+                        <span class="material-symbols-outlined">auto_stories</span>
+                      </div>
+                    }
+                  </div>
+                  <h5 class="queue-title">{{ b.title }}</h5>
+                  <p class="queue-author">{{ authorNames(b) }}</p>
+                </a>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- ── RIGHT: stats + goal + insights ───── -->
+      <aside class="col-right">
+
+        <!-- Yearly goal card -->
+        <div class="goal-card">
+          <div class="goal-head">
+            <h4 class="goal-title">{{ year }} Reading Goal</h4>
+            @if (!editingGoal()) {
+              <button class="goal-edit-btn" (click)="startEditGoal()" title="Edit goal">
+                <span class="material-symbols-outlined">edit</span>
+              </button>
+            }
+          </div>
+
+          @if (editingGoal()) {
+            <div class="goal-edit">
+              <label class="goal-edit-label">Books to read in {{ year }}</label>
+              <div class="goal-edit-row">
+                <input class="goal-input" type="number" min="1"
+                       [value]="goalDraft()"
+                       (input)="goalDraft.set(+$any($event.target).value)"
+                       (keydown.enter)="saveGoal()"
+                       (keydown.escape)="cancelEditGoal()"
+                       autofocus />
+                <button class="goal-save-btn" (click)="saveGoal()">
+                  <span class="material-symbols-outlined">check</span>
+                </button>
+                <button class="goal-cancel-btn" (click)="cancelEditGoal()">
+                  <span class="material-symbols-outlined">close</span>
+                </button>
+              </div>
+            </div>
+          } @else {
+            <p class="goal-value">
+              {{ summary()?.books_this_year ?? 0 }}<span>/{{ goal()?.goal ?? 25 }}</span>
+            </p>
+            @if (booksAhead() >= 0) {
+              <p class="goal-hint">You're {{ booksAhead() }} {{ booksAhead() === 1 ? 'book' : 'books' }} ahead of schedule. Nice pace!</p>
+            } @else {
+              <p class="goal-hint">{{ -booksAhead() }} {{ -booksAhead() === 1 ? 'book' : 'books' }} behind schedule. Still time to catch up.</p>
+            }
+            <div class="goal-bar">
+              <div class="goal-fill" [style.width]="goalPct() + '%'"></div>
+            </div>
+          }
+        </div>
+
+        <!-- Bento stats -->
+        <div class="bento">
+          <div class="bento-item">
+            <span class="material-symbols-outlined">bolt</span>
+            <span class="bento-value">{{ summary()?.reading_count ?? 0 }}</span>
+            <span class="bento-label">In Progress</span>
+          </div>
+          <div class="bento-item">
+            <span class="material-symbols-outlined">hourglass_empty</span>
+            <span class="bento-value">{{ summary()?.queued_count ?? 0 }}</span>
+            <span class="bento-label">Pending</span>
+          </div>
+          <div class="bento-item">
+            <span class="material-symbols-outlined">auto_awesome</span>
+            <span class="bento-value">{{ summary()?.avg_rating ?? 0 }}</span>
+            <span class="bento-label">Avg Rating</span>
+          </div>
+          <div class="bento-item">
+            <span class="material-symbols-outlined">auto_stories</span>
+            <span class="bento-value">{{ (summary()?.pages_read ?? 0).toLocaleString() }}</span>
+            <span class="bento-label">Pages Read</span>
+          </div>
+        </div>
+
+        <!-- Weekly trends card -->
+        <div class="trends-card">
+          <h4 class="trends-title">
+            <span class="material-symbols-outlined">insights</span>
+            Library Insights
+          </h4>
+          <div class="trend-row">
+            <div class="trend-icon">
+              <span class="material-symbols-outlined">check_circle</span>
+            </div>
+            <div>
+              <p class="trend-head">{{ summary()?.completed_count ?? 0 }} books completed</p>
+              <p class="trend-sub">Across all time</p>
+            </div>
+          </div>
+          <div class="trend-row">
+            <div class="trend-icon">
+              <span class="material-symbols-outlined">category</span>
+            </div>
+            <div>
+              <p class="trend-head">{{ summary()?.total_books ?? 0 }} in library</p>
+              <p class="trend-sub">Total books catalogued</p>
+            </div>
+          </div>
+        </div>
+
+      </aside>
+
+    </div>
+  </main>
+</div>

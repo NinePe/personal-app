@@ -1,0 +1,227 @@
+<div class="page">
+  <div class="orb orb--tr"></div>
+  <div class="orb orb--bl"></div>
+
+  <!-- ── Nav ─────────────────────────────────────── -->
+  <nav class="top-nav">
+    <div class="nav-left">
+      <a class="nav-back" routerLink="/" title="Back to home"><span class="material-symbols-outlined">arrow_back</span></a>
+      <span class="nav-brand">Spending</span>
+      <div class="nav-links">
+        <a class="nav-link" routerLink="/income">Income</a>
+        <a class="nav-link" routerLink="/expenses">Expenses</a>
+        <a class="nav-link nav-link--active" routerLink="/payments">Payments</a>
+        <a class="nav-link" routerLink="/people">People</a>
+        <a class="nav-link" routerLink="/loans">Loans</a>
+        <a class="nav-link" routerLink="/places">Places</a>
+        <a class="nav-link" routerLink="/budget">Budget</a>
+        <a class="nav-link" routerLink="/projections">Projections</a>
+      </div>
+    </div>
+    <div class="nav-right">
+      <a class="btn-add-income" routerLink="/new-income">
+        <span class="material-symbols-outlined">add</span>
+        Add Income
+      </a>
+      <a class="btn-add-expense" routerLink="/spending">
+        <span class="material-symbols-outlined">add</span>
+        Add Expense
+      </a>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- ── Header ──────────────────────────────── -->
+    <div class="page-header">
+      <a class="back-btn" routerLink="/payments">
+        <span class="material-symbols-outlined">arrow_back</span>
+        Back
+      </a>
+      <div>
+        <h1 class="page-title">
+          @if (card(); as c) {
+            {{ c.type === 'credit' ? 'Billing Cycles' : 'Monthly Periods' }} — {{ c.name }}
+          } @else {
+            History
+          }
+        </h1>
+        <p class="page-sub">
+          @if (card()) {
+            **** {{ card()?.last_four }} · Full history
+          }
+        </p>
+      </div>
+    </div>
+
+    <!-- ── Stats strip ──────────────────────────── -->
+    <div class="stats-row">
+      <div class="stat-chip">
+        <span class="material-symbols-outlined stat-chip__icon">event_repeat</span>
+        <div>
+          <p class="stat-chip__label">Total periods</p>
+          <p class="stat-chip__value">{{ filteredRows().length }}</p>
+        </div>
+      </div>
+      @if (hasAnyCycle()) {
+        <div class="stat-chip stat-chip--warning">
+          <span class="material-symbols-outlined stat-chip__icon">credit_card_off</span>
+          <div>
+            <p class="stat-chip__label">Unpaid (owed)</p>
+            <p class="stat-chip__value">{{ fmt(unpaidAmount()) }}</p>
+          </div>
+        </div>
+        <div class="stat-chip stat-chip--success">
+          <span class="material-symbols-outlined stat-chip__icon">task_alt</span>
+          <div>
+            <p class="stat-chip__label">Paid</p>
+            <p class="stat-chip__value">{{ fmt(paidAmount()) }}</p>
+          </div>
+        </div>
+      } @else {
+        <div class="stat-chip">
+          <span class="material-symbols-outlined stat-chip__icon">payments</span>
+          <div>
+            <p class="stat-chip__label">All-time spending</p>
+            <p class="stat-chip__value">{{ fmt(totalAmount()) }}</p>
+          </div>
+        </div>
+        <div class="stat-chip">
+          <span class="material-symbols-outlined stat-chip__icon">receipt_long</span>
+          <div>
+            <p class="stat-chip__label">Total transactions</p>
+            <p class="stat-chip__value">{{ totalCount() }}</p>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- ── Toolbar ──────────────────────────────── -->
+    <div class="toolbar">
+      <div class="search-wrap">
+        <span class="material-symbols-outlined">search</span>
+        <input type="text" placeholder="Search periods…"
+               [value]="searchTerm()"
+               (input)="setSearch($any($event.target).value)" />
+      </div>
+      <div class="page-size">
+        <label>Show</label>
+        <select [value]="pageSize()" (change)="setPageSize(+$any($event.target).value)">
+          <option [value]="10">10</option>
+          <option [value]="25">25</option>
+          <option [value]="50">50</option>
+          <option [value]="100">100</option>
+        </select>
+        <span>per page</span>
+      </div>
+    </div>
+
+    <!-- ── Table ────────────────────────────────── -->
+    <div class="table-card">
+      @if (loading()) {
+        <div class="table-skeleton">
+          @for (_ of [1,2,3,4,5]; track $index) {
+            <div class="skeleton-row"></div>
+          }
+        </div>
+      } @else if (!filteredRows().length) {
+        <div class="empty-state">
+          <span class="material-symbols-outlined">search_off</span>
+          <p>No results</p>
+        </div>
+      } @else {
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th class="th-sortable" (click)="setSort('from_date')">
+                Period
+                <span class="sort-icon material-symbols-outlined" [class.visible]="sortKey() === 'from_date'">
+                  {{ sortDir() === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                </span>
+              </th>
+              <th>From</th>
+              <th>To</th>
+              <th class="th-sortable th-right" (click)="setSort('count')">
+                Transactions
+                <span class="sort-icon material-symbols-outlined" [class.visible]="sortKey() === 'count'">
+                  {{ sortDir() === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                </span>
+              </th>
+              <th class="th-sortable th-right" (click)="setSort('total')">
+                Total
+                <span class="sort-icon material-symbols-outlined" [class.visible]="sortKey() === 'total'">
+                  {{ sortDir() === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                </span>
+              </th>
+              <th class="th-center">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of paginatedRows(); track row.id) {
+              <tr [class.row-active]="row.isActive" [class.row-paid]="row.paid">
+                <td class="col-name">
+                  <div class="name-cell">
+                    <span class="material-symbols-outlined">
+                      {{ row.isActive ? 'calendar_today' : 'event_repeat' }}
+                    </span>
+                    <span class="name-text">{{ row.name }}</span>
+                    @if (row.isActive) {
+                      <span class="badge-current">CURRENT</span>
+                    }
+                  </div>
+                </td>
+                <td>{{ fmtDate(row.from_date) }}</td>
+                <td>{{ fmtDate(row.to_date) }}</td>
+                <td class="td-right">{{ row.count }}</td>
+                <td class="td-right td-total"
+                    [class.td-zero]="+row.total === 0"
+                    [class.td-paid]="row.paid">
+                  {{ fmt(row.total) }}
+                </td>
+                <td class="td-center">
+                  @if (row.isCycle) {
+                    <button class="paid-toggle" [class.paid-toggle--on]="row.paid"
+                            (click)="togglePaid(row, $event)"
+                            [title]="row.paid ? 'Mark as unpaid' : 'Mark as paid'">
+                      <span class="material-symbols-outlined">
+                        {{ row.paid ? 'task_alt' : 'radio_button_unchecked' }}
+                      </span>
+                      {{ row.paid ? 'Paid' : 'Unpaid' }}
+                    </button>
+                  } @else {
+                    <span class="text-muted">—</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+
+      <!-- ── Pagination ──────────────────────────── -->
+      @if (!loading() && filteredRows().length) {
+        <div class="pagination">
+          <span class="pagination__info">
+            Page {{ page() }} of {{ totalPages() }} · {{ filteredRows().length }} results
+          </span>
+          <div class="pagination__controls">
+            <button class="page-btn" [disabled]="page() === 1" (click)="prevPage()">
+              <span class="material-symbols-outlined">chevron_left</span>
+            </button>
+            @for (p of pageNumbers(); track $index) {
+              @if (p === -1) {
+                <span class="page-ellipsis">…</span>
+              } @else {
+                <button class="page-btn" [class.active]="p === page()" (click)="setPage(p)">{{ p }}</button>
+              }
+            }
+            <button class="page-btn" [disabled]="page() === totalPages()" (click)="nextPage()">
+              <span class="material-symbols-outlined">chevron_right</span>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+
+  </main>
+</div>

@@ -1,0 +1,256 @@
+<div class="page">
+  <div class="orb orb--tr"></div>
+  <div class="orb orb--bl"></div>
+
+  <!-- ── Nav ─────────────────────────────────────── -->
+  <nav class="top-nav">
+    <div class="nav-left">
+      <a class="nav-back" routerLink="/" title="Back to home"><span class="material-symbols-outlined">arrow_back</span></a>
+      <span class="nav-brand">Spending</span>
+      <div class="nav-links">
+        <a class="nav-link" routerLink="/income">Income</a>
+        <a class="nav-link" routerLink="/expenses">Expenses</a>
+        <a class="nav-link" routerLink="/payments">Payments</a>
+        <a class="nav-link" routerLink="/people">People</a>
+        <a class="nav-link" routerLink="/loans">Loans</a>
+        <a class="nav-link" routerLink="/places">Places</a>
+        <a class="nav-link" routerLink="/budget">Budget</a>
+        <a class="nav-link nav-link--active" routerLink="/savings">Savings</a>
+        <a class="nav-link" routerLink="/projections">Projections</a>
+      </div>
+    </div>
+    <div class="nav-right">
+      <a class="btn-add-income" routerLink="/new-income">
+        <span class="material-symbols-outlined">add</span>
+        Add Income
+      </a>
+      <a class="btn-add-expense" routerLink="/spending">
+        <span class="material-symbols-outlined">add</span>
+        Add Expense
+      </a>
+      <span class="material-symbols-outlined nav-icon">notifications</span>
+      <span class="material-symbols-outlined nav-icon">account_circle</span>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- ── Hero ──────────────────────────────────────── -->
+    <section class="hero">
+      <div class="hero__glow"></div>
+      <div class="hero__content">
+        <div class="hero__left">
+          <p class="hero__eyebrow">
+            <span class="material-symbols-outlined">savings</span>
+            Savings Goals
+          </p>
+          <h1 class="hero__title">Total Saved</h1>
+          <div class="hero__amount-row">
+            <span class="hero__amount">{{ fmt(totalSaved()) }}</span>
+            <span class="hero__of">of {{ fmt(totalTarget()) }}</span>
+          </div>
+
+          <!-- Overall progress bar -->
+          <div class="hero__bar-wrap">
+            <div class="hero__bar">
+              <div class="hero__bar-fill" [style.width]="overallPct().toFixed(1) + '%'"></div>
+            </div>
+            <span class="hero__bar-pct">{{ overallPct().toFixed(0) }}%</span>
+          </div>
+        </div>
+
+        <a class="btn-new-goal" routerLink="/new-savings">
+          <span class="material-symbols-outlined">add</span>
+          New Goal
+        </a>
+      </div>
+
+      <!-- Stats row -->
+      <div class="hero__stats">
+        <div class="hero__stat">
+          <p class="hero__stat-val">{{ counts().active }}</p>
+          <p class="hero__stat-label">Active</p>
+        </div>
+        <div class="hero__stat">
+          <p class="hero__stat-val">{{ counts().paused }}</p>
+          <p class="hero__stat-label">Paused</p>
+        </div>
+        <div class="hero__stat">
+          <p class="hero__stat-val">{{ counts().done }}</p>
+          <p class="hero__stat-label">Completed</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Filter tabs ────────────────────────────────── -->
+    <div class="filter-bar">
+      <button class="filter-tab" [class.active]="filter() === 'all'"    (click)="filter.set('all')">
+        All <span class="filter-count">{{ counts().all }}</span>
+      </button>
+      <button class="filter-tab" [class.active]="filter() === 'active'" (click)="filter.set('active')">
+        Active <span class="filter-count">{{ counts().active }}</span>
+      </button>
+      <button class="filter-tab" [class.active]="filter() === 'paused'" (click)="filter.set('paused')">
+        Paused <span class="filter-count">{{ counts().paused }}</span>
+      </button>
+      <button class="filter-tab" [class.active]="filter() === 'done'"   (click)="filter.set('done')">
+        Completed <span class="filter-count">{{ counts().done }}</span>
+      </button>
+    </div>
+
+    <!-- ── Goals grid ────────────────────────────────── -->
+    @if (loading()) {
+      <div class="goals-grid">
+        @for (_ of [1,2,3,4]; track $index) {
+          <div class="goal-skeleton"></div>
+        }
+      </div>
+    } @else if (!filtered().length) {
+      <div class="empty-state">
+        <div class="empty-orb">
+          <span class="material-symbols-outlined">savings</span>
+        </div>
+        <h3 class="empty-title">No goals yet</h3>
+        <p class="empty-desc">Create your first savings goal to start tracking your progress.</p>
+        <a class="btn-new-goal" routerLink="/new-savings">
+          <span class="material-symbols-outlined">add</span>
+          Create Goal
+        </a>
+      </div>
+    } @else {
+      <div class="goals-grid">
+        @for (goal of filtered(); track goal.id) {
+          <div class="goal-card" [class.goal-card--done]="goal.status === 'done'">
+
+            <!-- Card header -->
+            <div class="goal-card__header" [style.background]="gradientStyle(goal.color)">
+              <div class="goal-card__header-icon">
+                <span class="material-symbols-outlined">{{ goal.icon }}</span>
+              </div>
+              <div class="goal-card__header-info">
+                <h3 class="goal-card__name">{{ goal.name }}</h3>
+                <span class="goal-status-badge goal-status-badge--{{ goal.status }}">
+                  {{ statusLabel(goal.status) }}
+                </span>
+              </div>
+              @if (goal.status === 'done') {
+                <span class="goal-done-check material-symbols-outlined">check_circle</span>
+              }
+            </div>
+
+            <!-- Progress -->
+            <div class="goal-card__body">
+              <div class="goal-progress">
+                <div class="goal-progress__bar">
+                  <div class="goal-progress__fill"
+                       [style.width]="pct(goal).toFixed(1) + '%'"
+                       [style.background]="goal.color">
+                  </div>
+                </div>
+                <span class="goal-progress__pct" [style.color]="goal.color">
+                  {{ pct(goal).toFixed(0) }}%
+                </span>
+              </div>
+
+              <div class="goal-amounts">
+                <div>
+                  <p class="goal-amounts__label">Saved</p>
+                  <p class="goal-amounts__value" [style.color]="goal.color">{{ fmt(goal.current_amount) }}</p>
+                </div>
+                <div class="goal-amounts__sep"></div>
+                <div class="text-right">
+                  <p class="goal-amounts__label">Target</p>
+                  <p class="goal-amounts__value">{{ fmt(goal.target_amount) }}</p>
+                </div>
+              </div>
+
+              <div class="goal-meta">
+                @if (goal.deadline) {
+                  <div class="goal-meta__item">
+                    <span class="material-symbols-outlined">event</span>
+                    <span>{{ fmtDeadline(goal) }}</span>
+                    @if ((monthsLeft(goal) ?? 0) > 0) {
+                      <span class="goal-meta__months">· {{ monthsLeft(goal) }} months left</span>
+                    } @else if ((monthsLeft(goal) ?? 1) <= 0 && goal.status !== 'done') {
+                      <span class="goal-meta__overdue">· Overdue</span>
+                    }
+                  </div>
+                }
+                @if (goal.status !== 'done' && monthlyNeeded(goal) > 0) {
+                  <div class="goal-meta__item goal-meta__item--monthly">
+                    <span class="material-symbols-outlined">trending_up</span>
+                    <span>{{ fmt(monthlyNeeded(goal)) }}/month needed</span>
+                  </div>
+                }
+                @if (goal.contributions_count > 0) {
+                  <div class="goal-meta__item">
+                    <span class="material-symbols-outlined">receipt_long</span>
+                    <span>{{ goal.contributions_count }} contribution{{ goal.contributions_count !== 1 ? 's' : '' }}</span>
+                  </div>
+                }
+              </div>
+
+              <!-- Contribution form (inline expand) -->
+              @if (expandedId() === goal.id) {
+                <div class="contrib-form">
+                  <div class="contrib-form__grid">
+                    <div class="contrib-form__field">
+                      <label class="contrib-form__label">Amount</label>
+                      <div class="contrib-amount-wrap">
+                        <span class="contrib-prefix">$</span>
+                        <input class="contrib-input" type="number" min="0" step="0.01" placeholder="0.00"
+                               [value]="contribAmount()"
+                               (input)="contribAmount.set($any($event.target).value)" />
+                      </div>
+                    </div>
+                    <div class="contrib-form__field">
+                      <label class="contrib-form__label">Date</label>
+                      <input class="contrib-input contrib-input--date" type="date"
+                             [value]="contribDate()"
+                             (change)="contribDate.set($any($event.target).value)" />
+                    </div>
+                  </div>
+                  <div class="contrib-form__field">
+                    <label class="contrib-form__label">Note (optional)</label>
+                    <input class="contrib-input" type="text" placeholder="e.g. Monthly deposit"
+                           [value]="contribNote()"
+                           (input)="contribNote.set($any($event.target).value)" />
+                  </div>
+                  <div class="contrib-form__actions">
+                    <button class="btn-contrib-save" [style.background]="goal.color"
+                            [disabled]="!contribAmount() || contribSaving()"
+                            (click)="saveContrib(goal)">
+                      <span class="material-symbols-outlined">check</span>
+                      {{ contribSaving() ? 'Saving…' : 'Save' }}
+                    </button>
+                    <button class="btn-contrib-cancel" (click)="openContrib(goal.id)">Cancel</button>
+                  </div>
+                </div>
+              }
+
+              <!-- Card actions -->
+              <div class="goal-card__actions">
+                @if (goal.status !== 'done') {
+                  <button class="btn-add-funds" [style.color]="goal.color"
+                          [style.background]="tint(goal.color)"
+                          (click)="openContrib(goal.id)">
+                    <span class="material-symbols-outlined">add</span>
+                    Add Funds
+                  </button>
+                }
+                <a class="btn-goal-edit" [routerLink]="['/new-savings', goal.id]" title="Edit">
+                  <span class="material-symbols-outlined">edit</span>
+                </a>
+                <button class="btn-goal-delete" (click)="deleteGoal(goal.id)" title="Delete">
+                  <span class="material-symbols-outlined">delete</span>
+                </button>
+              </div>
+
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+  </main>
+</div>

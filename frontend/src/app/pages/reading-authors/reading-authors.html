@@ -1,0 +1,237 @@
+<div class="page">
+  <div class="orb orb--tr"></div>
+
+  <!-- ── Nav ─────────────────────────────────────── -->
+  <nav class="top-nav">
+    <div class="nav-left">
+      <a class="nav-back" routerLink="/reading" title="Back to library">
+        <span class="material-symbols-outlined">arrow_back</span>
+      </a>
+      <span class="nav-brand">Reading</span>
+      <div class="nav-links">
+        <a class="nav-link" routerLink="/reading">Library</a>
+        <a class="nav-link nav-link--active" routerLink="/reading/authors">Authors</a>
+        <a class="nav-link" routerLink="/reading/sagas">Sagas</a>
+        <a class="nav-link" routerLink="/reading/genres">Genres</a>
+      </div>
+    </div>
+    <div class="nav-right">
+      <button class="btn-primary" (click)="openNew()">
+        <span class="material-symbols-outlined">person_add</span>
+        New Author
+      </button>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- Header -->
+    <header class="page-header">
+      <div>
+        <span class="eyebrow">Masters</span>
+        <h1 class="page-title">Authors</h1>
+        <p class="page-sub">The souls behind every story in your library.</p>
+      </div>
+      <div class="header-stats">
+        <div class="stat-chip">
+          <span class="stat-num">{{ authors().length }}</span>
+          <span class="stat-label">Authors</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-num">{{ totalBooks() }}</span>
+          <span class="stat-label">Books catalogued</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Search -->
+    <div class="search-bar">
+      <span class="material-symbols-outlined">search</span>
+      <input type="text" placeholder="Search by name or origin…"
+             [value]="query()"
+             (input)="query.set($any($event.target).value)" />
+    </div>
+
+    <!-- Grid -->
+    @if (loading()) {
+      <div class="grid">
+        @for (_ of [1,2,3,4,5,6]; track $index) {
+          <div class="skeleton-card"></div>
+        }
+      </div>
+    } @else if (!filtered().length) {
+      <div class="empty-state">
+        <span class="material-symbols-outlined">person_off</span>
+        <h3>{{ query() ? 'No authors match your search' : 'No authors yet' }}</h3>
+        <p>{{ query() ? 'Try a different keyword.' : 'Add your first author to get started.' }}</p>
+        @if (!query()) {
+          <button class="btn-primary" (click)="openNew()">
+            <span class="material-symbols-outlined">person_add</span>
+            Add author
+          </button>
+        }
+      </div>
+    } @else {
+      <div class="grid">
+        @for (a of filtered(); track a.id) {
+          <div class="author-card" (click)="openDetail(a)">
+            <div class="author-avatar" [style.background]="genderColor(a.gender)">
+              {{ initial(a.name) }}
+            </div>
+            <div class="author-body">
+              <h3 class="author-name">{{ a.name }}</h3>
+              <div class="author-meta">
+                @if (a.gender) {
+                  <span class="pill">{{ genderLabel(a.gender) }}</span>
+                }
+                @if (a.origin_place) {
+                  <span class="origin">
+                    <span class="material-symbols-outlined">location_on</span>
+                    {{ a.origin_place }}
+                  </span>
+                }
+              </div>
+              <p class="author-count">
+                <span class="material-symbols-outlined">auto_stories</span>
+                {{ a.book_count ?? 0 }} {{ a.book_count === 1 ? 'book' : 'books' }}
+              </p>
+            </div>
+            <div class="card-actions">
+              <button class="card-btn" (click)="openEdit(a, $event)" title="Edit">
+                <span class="material-symbols-outlined">edit</span>
+              </button>
+              <button class="card-btn card-btn--del" (click)="delete(a, $event)" title="Delete">
+                <span class="material-symbols-outlined">delete</span>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </main>
+
+  <!-- ══════════════════════════════════════════════
+       FORM MODAL
+  ══════════════════════════════════════════════ -->
+  @if (showForm()) {
+    <div class="modal-backdrop" (click)="closeForm()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-head">
+          <h3>{{ editingId() ? 'Edit Author' : 'New Author' }}</h3>
+          <button class="modal-close" (click)="closeForm()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="field">
+            <label class="field-label">Name *</label>
+            <input class="input" type="text" placeholder="Matt Haig" autofocus
+                   [value]="formName()"
+                   (input)="formName.set($any($event.target).value)" />
+          </div>
+          <div class="field">
+            <label class="field-label">Gender</label>
+            <select class="select"
+                    [value]="formGender() ?? ''"
+                    (change)="formGender.set($any($event.target).value || null)">
+              <option value="">— Select —</option>
+              <option value="female">Female</option>
+              <option value="male">Male</option>
+              <option value="non_binary">Non-binary</option>
+              <option value="trans">Trans</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">Origin / Nationality</label>
+            <input class="input" type="text" placeholder="England, UK"
+                   [value]="formOrigin()"
+                   (input)="formOrigin.set($any($event.target).value)" />
+          </div>
+          <div class="field">
+            <label class="field-label">Notes</label>
+            <textarea class="textarea" rows="2" placeholder="Any personal notes…"
+                      [value]="formNotes()"
+                      (input)="formNotes.set($any($event.target).value)"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-cancel" (click)="closeForm()">Cancel</button>
+          <button class="btn-confirm" [disabled]="saving() || !formName().trim()" (click)="save()">
+            {{ saving() ? 'Saving…' : (editingId() ? 'Save changes' : 'Create author') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ══════════════════════════════════════════════
+       DETAIL DRAWER (books by this author)
+  ══════════════════════════════════════════════ -->
+  @if (detailAuthor(); as da) {
+    <div class="modal-backdrop" (click)="closeDetail()">
+      <div class="drawer" (click)="$event.stopPropagation()">
+        <div class="drawer-head">
+          <div class="drawer-head-info">
+            <div class="drawer-avatar" [style.background]="genderColor(da.gender)">
+              {{ initial(da.name) }}
+            </div>
+            <div>
+              <h2>{{ da.name }}</h2>
+              <p>
+                @if (da.gender) { {{ genderLabel(da.gender) }} }
+                @if (da.gender && da.origin_place) { · }
+                @if (da.origin_place) { {{ da.origin_place }} }
+                @if (!da.gender && !da.origin_place) { No details recorded }
+              </p>
+            </div>
+          </div>
+          <button class="modal-close" (click)="closeDetail()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        @if (da.notes) {
+          <div class="drawer-notes">{{ da.notes }}</div>
+        }
+
+        <div class="drawer-body">
+          <h4 class="drawer-section-title">
+            {{ detailBooks().length }} {{ detailBooks().length === 1 ? 'book' : 'books' }} in library
+          </h4>
+
+          @if (detailLoading()) {
+            <div class="skeleton-list">
+              @for (_ of [1,2,3]; track $index) { <div class="skeleton-row"></div> }
+            </div>
+          } @else if (!detailBooks().length) {
+            <p class="drawer-empty">No books catalogued under this author yet.</p>
+          } @else {
+            <div class="drawer-books">
+              @for (b of detailBooks(); track b.id) {
+                <a class="drawer-book" [routerLink]="['/reading/new-book', b.id]">
+                  <div class="drawer-book-cover">
+                    @if (b.cover_url) {
+                      <img [src]="b.cover_url" [alt]="b.title" />
+                    } @else {
+                      <span class="material-symbols-outlined">auto_stories</span>
+                    }
+                  </div>
+                  <div class="drawer-book-info">
+                    <p class="drawer-book-title">{{ b.title }}</p>
+                    <p class="drawer-book-sub">
+                      @if (b.book_type) { {{ b.book_type.name }} · }
+                      {{ b.status }}
+                    </p>
+                  </div>
+                </a>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

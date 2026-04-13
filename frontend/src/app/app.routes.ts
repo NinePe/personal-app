@@ -1,0 +1,71 @@
+import { Routes } from '@angular/router';
+import { Home }             from './pages/home/home';
+import { Reading }          from './pages/reading/reading';
+import { Cinema }           from './pages/cinema/cinema';
+import { Spending }         from './pages/spending/spending';
+import { ExpensesDashboard } from './pages/expenses/expenses';
+import { Payments }         from './pages/payments/payments';
+import { CyclesHistory }    from './pages/cycles-history/cycles-history';
+import { NewCard }          from './pages/new-card/new-card';
+import { People }           from './pages/people/people';
+import { NewPerson }        from './pages/new-person/new-person';
+import { Budget }           from './pages/budget/budget';
+import { Places }           from './pages/places/places';
+import { NewPlace }         from './pages/new-place/new-place';
+import { IncomePage }       from './pages/income/income';
+import { NewIncome }        from './pages/new-income/new-income';
+import { Savings }          from './pages/savings/savings';
+import { NewSavings }       from './pages/new-savings/new-savings';
+import { Growth }           from './pages/growth/growth';
+import { Mindfulness }      from './pages/mindfulness/mindfulness';
+import { Loans }            from './pages/loans/loans';
+import { NewLoanPage }      from './pages/new-loan/new-loan';
+import { LoanHistoryPage }  from './pages/loan-history/loan-history';
+import { Projections }      from './pages/projections/projections';
+import { NewBookPage }      from './pages/new-book/new-book';
+import { ReadingSessionPage } from './pages/reading-session/reading-session';
+import { ReadingCompletedPage } from './pages/reading-completed/reading-completed';
+import { ReadingAuthorsPage } from './pages/reading-authors/reading-authors';
+import { ReadingSagasPage }   from './pages/reading-sagas/reading-sagas';
+import { ReadingGenresPage }  from './pages/reading-genres/reading-genres';
+
+export const routes: Routes = [
+  { path: '',           component: Home },
+  { path: 'income',         component: IncomePage },
+  { path: 'new-income',     component: NewIncome },
+  { path: 'new-income/:id', component: NewIncome },
+  { path: 'expenses',       component: ExpensesDashboard },
+  { path: 'payments',   component: Payments },
+  { path: 'payments/:cardId/cycles', component: CyclesHistory },
+  { path: 'new-card',   component: NewCard },
+  { path: 'people',         component: People },
+  { path: 'new-person',     component: NewPerson },
+  { path: 'new-person/:id', component: NewPerson },
+  { path: 'budget',     component: Budget },
+  { path: 'places',         component: Places },
+  { path: 'new-place',      component: NewPlace },
+  { path: 'new-place/:id',  component: NewPlace },
+  { path: 'savings',         component: Savings },
+  { path: 'new-savings',     component: NewSavings },
+  { path: 'new-savings/:id', component: NewSavings },
+  { path: 'loans',                   component: Loans },
+  { path: 'new-loan',                component: NewLoanPage },
+  { path: 'new-loan/:id',            component: NewLoanPage },
+  { path: 'loan-history/:personId',  component: LoanHistoryPage },
+  { path: 'projections',             component: Projections },
+  { path: 'reading/session',      component: ReadingSessionPage },
+  { path: 'reading/completed',    component: ReadingCompletedPage },
+  { path: 'reading/authors',      component: ReadingAuthorsPage },
+  { path: 'reading/sagas',        component: ReadingSagasPage },
+  { path: 'reading/genres',       component: ReadingGenresPage },
+  { path: 'reading/new-book/:id', component: NewBookPage },
+  { path: 'reading/new-book',     component: NewBookPage },
+  { path: 'reading',              component: Reading },
+  { path: 'cinema',     component: Cinema },
+  { path: 'wealth',     component: Spending },   // legacy alias
+  { path: 'spending',      component: Spending },
+  { path: 'spending/:id',  component: Spending },
+  { path: 'growth',     component: Growth },
+  { path: 'mindfulness', component: Mindfulness },
+  { path: '**', redirectTo: '' },
+];

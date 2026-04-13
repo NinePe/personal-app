@@ -1,0 +1,258 @@
+<div class="page">
+  <div class="orb orb--tr"></div>
+  <div class="orb orb--bl"></div>
+
+  <!-- ── Nav ─────────────────────────────────────── -->
+  <nav class="top-nav">
+    <div class="nav-left">
+      <a class="nav-back" routerLink="/" title="Back to home"><span class="material-symbols-outlined">arrow_back</span></a>
+      <span class="nav-brand">Spending</span>
+      <div class="nav-links">
+        <a class="nav-link" routerLink="/income">Income</a>
+        <a class="nav-link nav-link--active" routerLink="/expenses">Expenses</a>
+        <a class="nav-link" routerLink="/payments">Payments</a>
+        <a class="nav-link" routerLink="/people">People</a>
+        <a class="nav-link" routerLink="/loans">Loans</a>
+        <a class="nav-link" routerLink="/places">Places</a>
+        <a class="nav-link" routerLink="/budget">Budget</a>
+        <a class="nav-link" routerLink="/projections">Projections</a>
+      </div>
+    </div>
+    <div class="nav-right">
+      <a class="btn-add-income" routerLink="/new-income">
+        <span class="material-symbols-outlined">add</span>
+        Add Income
+      </a>
+      <a class="btn-add-expense" routerLink="/spending">
+        <span class="material-symbols-outlined">add</span>
+        Add Expense
+      </a>
+      <span class="material-symbols-outlined nav-icon">notifications</span>
+      <span class="material-symbols-outlined nav-icon">account_circle</span>
+    </div>
+  </nav>
+
+  <!-- ── Main ─────────────────────────────────────── -->
+  <main class="main">
+    <div class="content-grid">
+
+      <!-- ── Left column ──────────────────────────── -->
+      <aside class="col-left">
+
+        <!-- Total card -->
+        <div class="total-card">
+          <div class="total-card__orb"></div>
+          <div class="total-card__top">
+
+            <!-- Date filter tabs -->
+            <div class="date-filters">
+              <button class="date-filter-btn" [class.active]="activeFilter() === 'month'" (click)="setFilter('month')">This Month</button>
+              <button class="date-filter-btn" [class.active]="activeFilter() === 'year'"  (click)="setFilter('year')">This Year</button>
+              <button class="date-filter-btn" [class.active]="activeFilter() === 'all'"   (click)="setFilter('all')">All Time</button>
+              <button class="date-filter-btn" [class.active]="activeFilter() === 'custom'" (click)="setFilter('custom')">Custom</button>
+            </div>
+
+            <!-- Custom date range picker -->
+            @if (activeFilter() === 'custom') {
+              <div class="custom-range">
+                <input type="date" class="date-input"
+                  [value]="customFrom()"
+                  (change)="customFrom.set($any($event.target).value)" />
+                <span class="range-sep">–</span>
+                <input type="date" class="date-input"
+                  [value]="customTo()"
+                  (change)="customTo.set($any($event.target).value)" />
+                <button class="btn-apply" (click)="applyCustom()">Apply</button>
+              </div>
+            }
+
+            <!-- Month navigation (only for "This Month" filter) -->
+            @if (activeFilter() === 'month') {
+              <div class="total-month-nav">
+                <button class="month-nav-btn" (click)="prevMonth()">
+                  <span class="material-symbols-outlined">chevron_left</span>
+                </button>
+                <span class="month-label">{{ periodLabel() }}</span>
+                <button class="month-nav-btn" [class.disabled]="!canGoNext()" (click)="nextMonth()">
+                  <span class="material-symbols-outlined">chevron_right</span>
+                </button>
+              </div>
+            }
+
+            <!-- Year navigation (only for "This Year" filter) -->
+            @if (activeFilter() === 'year') {
+              <div class="total-month-nav">
+                <button class="month-nav-btn" (click)="prevYear()">
+                  <span class="material-symbols-outlined">chevron_left</span>
+                </button>
+                <span class="month-label">{{ periodLabel() }}</span>
+                <button class="month-nav-btn" (click)="nextYear()">
+                  <span class="material-symbols-outlined">chevron_right</span>
+                </button>
+              </div>
+            }
+
+            @if (activeFilter() === 'all' || (activeFilter() === 'custom' && customFrom() && customTo())) {
+              <div class="period-label">{{ periodLabel() }}</div>
+            }
+
+            <p class="total-label">Total spending</p>
+            <h1 class="total-amount">{{ formatAmount(totalAmount()) }}</h1>
+            @if (trendPct() !== null) {
+              <div class="trend" [class.trend--down]="(trendPct() ?? 0) < 0" [class.trend--up]="(trendPct() ?? 0) > 0">
+                <span class="material-symbols-outlined">{{ (trendPct() ?? 0) < 0 ? 'trending_down' : 'trending_up' }}</span>
+                <span>{{ absTrend() }}% {{ (trendPct() ?? 0) < 0 ? 'less' : 'more' }} than last month</span>
+              </div>
+            }
+          </div>
+          <a class="btn-new-expense" routerLink="/spending">
+            <span class="material-symbols-outlined">add_circle</span>
+            New Expense
+          </a>
+        </div>
+
+        <!-- Categories card -->
+        <div class="cat-card">
+          <div class="cat-card__header">
+            <h2 class="section-title">Categories</h2>
+            <span class="material-symbols-outlined icon-muted">more_horiz</span>
+          </div>
+
+          <!-- Donut chart -->
+          <div class="donut-wrap">
+            <svg viewBox="0 0 120 120" class="donut-svg">
+              <!-- Track -->
+              <circle cx="60" cy="60" r="48" fill="none" stroke="#ebddff" stroke-width="16" />
+              <!-- Segments -->
+              @for (seg of donutSegments(); track $index) {
+                <circle
+                  cx="60" cy="60" r="48"
+                  fill="none"
+                  [attr.stroke]="seg.color"
+                  stroke-width="15"
+                  [attr.stroke-dasharray]="seg.dash + ' ' + seg.gap"
+                  [attr.stroke-dashoffset]="-seg.offset"
+                  transform="rotate(-90 60 60)"
+                />
+              }
+              @if (!donutSegments().length) {
+                <circle cx="60" cy="60" r="48" fill="none" stroke="#ebddff" stroke-width="16" />
+              }
+            </svg>
+            <div class="donut-center">
+              <span class="donut-label">Top</span>
+              <span class="donut-value">{{ topCategory() }}</span>
+            </div>
+          </div>
+
+          <!-- Legend -->
+          <div class="cat-legend">
+            @for (cat of categoriesWithPct(); track cat.name) {
+              <div class="cat-row">
+                <div class="cat-row__info">
+                  <span class="cat-dot" [style.background]="cat.chartColor"></span>
+                  <span class="cat-row__name">{{ cat.name }}</span>
+                </div>
+                <span class="cat-row__pct">{{ cat.percentage.toFixed(0) }}%</span>
+              </div>
+            }
+            @if (!categoriesWithPct().length) {
+              <p class="empty-hint">No data for this month</p>
+            }
+          </div>
+        </div>
+
+      </aside>
+
+      <!-- ── Right column ─────────────────────────── -->
+      <section class="col-right">
+        <div class="txn-card">
+          <div class="txn-card__header">
+            <div>
+              <h2 class="section-title">Transactions</h2>
+              <p class="section-sub">
+                {{ expenses().length }} total · Page {{ page() }} of {{ totalPages() }}
+              </p>
+            </div>
+          </div>
+
+          @if (loading()) {
+            <div class="loading-list">
+              @for (_ of [1,2,3,4]; track $index) {
+                <div class="skeleton-row">
+                  <div class="skeleton-icon"></div>
+                  <div class="skeleton-lines">
+                    <div class="skeleton-line skeleton-line--wide"></div>
+                    <div class="skeleton-line skeleton-line--narrow"></div>
+                  </div>
+                  <div class="skeleton-amount"></div>
+                </div>
+              }
+            </div>
+          } @else if (!expenses().length) {
+            <div class="empty-state">
+              <span class="material-symbols-outlined empty-icon">receipt_long</span>
+              <p>No expenses recorded for this period.</p>
+              <a class="btn-add-first" routerLink="/spending">Add your first expense</a>
+            </div>
+          } @else {
+            <div class="txn-list">
+              @for (exp of paginatedExpenses(); track exp.id) {
+                <div class="txn-row">
+                  <div class="txn-icon-box">
+                    <span class="material-symbols-outlined">{{ exp.category.icon || 'more_horiz' }}</span>
+                  </div>
+                  <div class="txn-info">
+                    <h4 class="txn-title">{{ exp.description || exp.place?.name || exp.category.name }}</h4>
+                    <p class="txn-meta">
+                      {{ exp.subcategory?.name ?? exp.category.name }}
+                      @if (exp.card) { <span>· {{ exp.card.name }} ****{{ exp.card.last_four }}</span> }
+                      · {{ formatDate(exp.transaction_date) }}
+                    </p>
+                  </div>
+                  <div class="txn-amount-col">
+                    <span class="txn-amount">-{{ formatAmount(exp.amount) }}</span>
+                    @if (exp.is_split) {
+                      <span class="txn-badge txn-badge--split">Split</span>
+                    } @else {
+                      <span class="txn-badge">{{ exp.card.type === 'credit' ? 'Credit' : 'Debit' }}</span>
+                    }
+                  </div>
+                  <div class="txn-actions">
+                    <a class="txn-btn txn-btn--edit" [routerLink]="['/spending', exp.id]" title="Edit">
+                      <span class="material-symbols-outlined">edit</span>
+                    </a>
+                    <button class="txn-btn txn-btn--del" (click)="deleteExpense(exp.id)" title="Delete">
+                      <span class="material-symbols-outlined">delete</span>
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Pagination -->
+            @if (totalPages() > 1) {
+              <div class="pagination">
+                <button class="page-btn" [disabled]="page() === 1" (click)="setPage(page() - 1)">
+                  <span class="material-symbols-outlined">chevron_left</span>
+                </button>
+                @for (p of pageNumbers(); track $index) {
+                  @if (p === -1) {
+                    <span class="page-ellipsis">…</span>
+                  } @else {
+                    <button class="page-btn" [class.active]="p === page()" (click)="setPage(p)">{{ p }}</button>
+                  }
+                }
+                <button class="page-btn" [disabled]="page() === totalPages()" (click)="setPage(page() + 1)">
+                  <span class="material-symbols-outlined">chevron_right</span>
+                </button>
+              </div>
+            }
+          }
+        </div>
+      </section>
+
+    </div>
+
+  </main>
+</div>

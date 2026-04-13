@@ -1,0 +1,171 @@
+<div class="page">
+  <div class="orb orb--tr"></div>
+
+  <!-- ── Nav ─────────────────────────────────────── -->
+  <nav class="top-nav">
+    <div class="nav-left">
+      <a class="nav-back" routerLink="/" title="Back to home"><span class="material-symbols-outlined">arrow_back</span></a>
+      <span class="nav-brand">Spending</span>
+      <div class="nav-links">
+        <a class="nav-link" routerLink="/income">Income</a>
+        <a class="nav-link" routerLink="/expenses">Expenses</a>
+        <a class="nav-link" routerLink="/payments">Payments</a>
+        <a class="nav-link" routerLink="/people">People</a>
+        <a class="nav-link nav-link--active" routerLink="/loans">Loans</a>
+        <a class="nav-link" routerLink="/places">Places</a>
+        <a class="nav-link" routerLink="/budget">Budget</a>
+        <a class="nav-link" routerLink="/projections">Projections</a>
+      </div>
+    </div>
+    <div class="nav-right">
+      <a class="btn-add-income" routerLink="/new-income">
+        <span class="material-symbols-outlined">add</span>
+        Add Income
+      </a>
+      <a class="btn-add-expense" routerLink="/spending">
+        <span class="material-symbols-outlined">add</span>
+        Add Expense
+      </a>
+      <span class="material-symbols-outlined nav-icon">notifications</span>
+      <span class="material-symbols-outlined nav-icon">account_circle</span>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    @if (loading() || !history()) {
+      <div class="loading-shell">
+        <div class="skeleton-hero"></div>
+        <div class="skeleton-list">
+          @for (_ of [1,2,3,4]; track $index) {
+            <div class="skeleton-row"></div>
+          }
+        </div>
+      </div>
+    } @else {
+
+      <!-- ── Hero (person summary) ──────────────── -->
+      <section class="hero" [class.hero--lent]="direction() === 'lent'"
+                             [class.hero--borrowed]="direction() === 'borrowed'"
+                             [class.hero--settled]="direction() === 'settled'">
+        <div class="hero__avatar-wrap">
+          @if (history()!.person.avatar_url) {
+            <img class="hero__avatar" [src]="history()!.person.avatar_url" [alt]="history()!.person.name" />
+          } @else {
+            <div class="hero__avatar hero__avatar--initials">
+              {{ initial(history()!.person.name) }}
+            </div>
+          }
+        </div>
+        <div class="hero__info">
+          <p class="hero__status">
+            @if (direction() === 'lent') { They owe you }
+            @else if (direction() === 'borrowed') { You owe them }
+            @else { All settled }
+          </p>
+          <h1 class="hero__name">{{ history()!.person.name }}</h1>
+          <p class="hero__balance"
+             [class.val-pos]="direction() === 'lent'"
+             [class.val-neg]="direction() === 'borrowed'">
+            @if (direction() === 'settled') { $0.00 }
+            @else { {{ fmt(absBalance()) }} }
+          </p>
+          @if (history()!.person.relationship) {
+            <span class="hero__badge">{{ history()!.person.relationship }}</span>
+          }
+        </div>
+      </section>
+
+      <!-- ── Stats strip ────────────────────────── -->
+      <div class="stats-grid">
+        <div class="stat-card stat-card--lent">
+          <span class="material-symbols-outlined">trending_up</span>
+          <div>
+            <p class="stat-card__label">Total I've lent them</p>
+            <p class="stat-card__value">{{ fmt(history()!.stats.total_lent) }}</p>
+            <p class="stat-card__sub">{{ history()!.stats.times_lent }} time{{ history()!.stats.times_lent === 1 ? '' : 's' }}</p>
+          </div>
+        </div>
+        <div class="stat-card stat-card--borrowed">
+          <span class="material-symbols-outlined">trending_down</span>
+          <div>
+            <p class="stat-card__label">Total they've lent me</p>
+            <p class="stat-card__value">{{ fmt(history()!.stats.total_borrowed) }}</p>
+            <p class="stat-card__sub">{{ history()!.stats.times_borrowed }} time{{ history()!.stats.times_borrowed === 1 ? '' : 's' }}</p>
+          </div>
+        </div>
+        <div class="stat-card stat-card--net">
+          <span class="material-symbols-outlined">balance</span>
+          <div>
+            <p class="stat-card__label">Transactions</p>
+            <p class="stat-card__value">{{ history()!.transactions.length }}</p>
+            <p class="stat-card__sub">total history</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Transaction timeline ───────────────── -->
+      <section class="timeline-card">
+        <div class="timeline-card__header">
+          <h2 class="section-title">Transaction History</h2>
+          <p class="section-sub">Newest first · running balance shown per entry</p>
+        </div>
+
+        @if (!history()!.transactions.length) {
+          <div class="empty">
+            <span class="material-symbols-outlined">receipt_long</span>
+            <p>No transactions yet</p>
+          </div>
+        } @else {
+          <div class="timeline">
+            @for (tx of transactionsWithRunning(); track tx.id) {
+              <div class="tx-row">
+                <div class="tx-row__icon"
+                     [class.tx-row__icon--lent]="tx.direction === 'i_lent'"
+                     [class.tx-row__icon--borrowed]="tx.direction === 'i_borrowed'">
+                  <span class="material-symbols-outlined">
+                    {{ tx.direction === 'i_lent' ? 'north_east' : 'south_west' }}
+                  </span>
+                </div>
+                <div class="tx-row__body">
+                  <p class="tx-row__title">
+                    {{ tx.direction === 'i_lent' ? 'I lent' : 'I borrowed' }}
+                    <span class="tx-row__amount"
+                          [class.amt-lent]="tx.direction === 'i_lent'"
+                          [class.amt-borrowed]="tx.direction === 'i_borrowed'">
+                      {{ fmt(tx.amount) }}
+                    </span>
+                  </p>
+                  <p class="tx-row__meta">
+                    {{ fmtDate(tx.transaction_date) }}
+                    @if (tx.description) { <span class="dot">·</span> {{ tx.description }} }
+                    @if (tx.card) { <span class="dot">·</span> {{ tx.card.name }} ****{{ tx.card.last_four }} }
+                  </p>
+                </div>
+                <div class="tx-row__right">
+                  <p class="tx-row__running-label">Running balance</p>
+                  <p class="tx-row__running"
+                     [class.val-pos]="tx.running > 0"
+                     [class.val-neg]="tx.running < 0">
+                    @if (tx.running > 0) { +{{ fmt(tx.running) }} }
+                    @else if (tx.running < 0) { -{{ fmt(tx.running) }} }
+                    @else { Settled }
+                  </p>
+                </div>
+                <div class="tx-row__actions">
+                  <a class="tx-btn" [routerLink]="['/new-loan', tx.id]" title="Edit">
+                    <span class="material-symbols-outlined">edit</span>
+                  </a>
+                  <button class="tx-btn tx-btn--del" (click)="deleteTx(tx)" title="Delete">
+                    <span class="material-symbols-outlined">delete</span>
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </section>
+
+    }
+  </main>
+</div>

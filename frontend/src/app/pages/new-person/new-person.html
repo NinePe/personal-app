@@ -1,0 +1,149 @@
+<div class="page">
+  <div class="orb orb--tr"></div>
+  <div class="orb orb--bl"></div>
+
+  <!-- ── Nav ─────────────────────────────────────── -->
+  <nav class="top-nav">
+    <div class="nav-left">
+      <a class="nav-back" routerLink="/" title="Back to home"><span class="material-symbols-outlined">arrow_back</span></a>
+      <span class="nav-brand">Spending</span>
+      <div class="nav-links">
+        <a class="nav-link" routerLink="/income">Income</a>
+        <a class="nav-link" routerLink="/expenses">Expenses</a>
+        <a class="nav-link" routerLink="/payments">Payments</a>
+        <a class="nav-link nav-link--active" routerLink="/people">People</a>
+        <a class="nav-link" routerLink="/loans">Loans</a>
+        <a class="nav-link" routerLink="/places">Places</a>
+        <a class="nav-link" routerLink="/budget">Budget</a>
+        <a class="nav-link" routerLink="/projections">Projections</a>
+      </div>
+    </div>
+    <div class="nav-right">
+      <a class="btn-add-income" routerLink="/new-income">
+        <span class="material-symbols-outlined">add</span>
+        Add Income
+      </a>
+      <a class="btn-add-expense" routerLink="/spending">
+        <span class="material-symbols-outlined">add</span>
+        Add Expense
+      </a>
+      <span class="material-symbols-outlined nav-icon">notifications</span>
+      <span class="material-symbols-outlined nav-icon">account_circle</span>
+    </div>
+  </nav>
+
+  <main class="main">
+    <div class="layout">
+
+      <!-- ── Left: preview ──────────────────────── -->
+      <div class="preview-col">
+        <div class="preview-header">
+          <h1 class="preview-title">{{ isEdit() ? 'Edit Person' : 'Expand Your\nCircle' }}</h1>
+          <p class="preview-sub">{{ isEdit() ? 'Update contact details.' : 'Add someone you share expenses with.' }}</p>
+        </div>
+
+        <!-- Avatar preview -->
+        <div class="avatar-preview">
+          <div class="avatar-preview__orb">
+            <span class="avatar-preview__initials">{{ name().trim() ? (name().trim().split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)) : '?' }}</span>
+          </div>
+          @if (name().trim()) {
+            <p class="avatar-preview__name">{{ name().trim() }}</p>
+          }
+          @if (relationship()) {
+            <span class="avatar-preview__rel">{{ relationship().charAt(0).toUpperCase() + relationship().slice(1) }}</span>
+          }
+        </div>
+
+        <!-- Feature hints -->
+        <div class="feature-grid">
+          <div class="feature-chip">
+            <span class="material-symbols-outlined feature-icon feature-icon--primary">pie_chart</span>
+            <div>
+              <p class="feature-chip__title">Split Tracking</p>
+              <p class="feature-chip__desc">See exactly how much is shared per person</p>
+            </div>
+          </div>
+          <div class="feature-chip">
+            <span class="material-symbols-outlined feature-icon feature-icon--secondary">insights</span>
+            <div>
+              <p class="feature-chip__title">Monthly Stats</p>
+              <p class="feature-chip__desc">View trends and patterns over time</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Right: form ────────────────────────── -->
+      <div class="form-card">
+
+        <!-- Name -->
+        <div class="field-group">
+          <label class="field-label">Full name <span class="required">*</span></label>
+          <div class="input-wrap">
+            <input class="field-input" type="text" placeholder="e.g. María García"
+                   [value]="name()" (input)="name.set($any($event.target).value)" />
+            <span class="material-symbols-outlined input-icon">badge</span>
+          </div>
+        </div>
+
+        <!-- Relationship -->
+        <div class="field-group">
+          <label class="field-label">Relationship <span class="required">*</span></label>
+          <div class="rel-grid">
+            @for (rel of RELATIONSHIPS; track rel.value) {
+              <button type="button"
+                class="rel-btn"
+                [class.active]="relationship() === rel.value"
+                (click)="relationship.set(rel.value)">
+                <span class="material-symbols-outlined">{{ rel.icon }}</span>
+                {{ rel.label }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div class="field-group">
+          <label class="field-label">Email</label>
+          <div class="input-wrap">
+            <input class="field-input" type="email" placeholder="email@example.com"
+                   [value]="email()" (input)="email.set($any($event.target).value)" />
+            <span class="material-symbols-outlined input-icon">mail</span>
+          </div>
+        </div>
+
+        <!-- Phone -->
+        <div class="field-group">
+          <label class="field-label">Phone</label>
+          <div class="input-wrap">
+            <input class="field-input" type="tel" placeholder="+1 555 000 0000"
+                   [value]="phone()" (input)="phone.set($any($event.target).value)" />
+            <span class="material-symbols-outlined input-icon">call</span>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="field-group">
+          <label class="field-label">Notes</label>
+          <textarea class="field-input field-textarea" placeholder="Any extra details…"
+                    [value]="notes()" (input)="notes.set($any($event.target).value)"></textarea>
+        </div>
+
+        @if (errorMsg()) {
+          <div class="error-msg">{{ errorMsg() }}</div>
+        }
+
+        <!-- Actions -->
+        <div class="form-actions">
+          <button class="btn-save" [disabled]="!isValid() || saving()" (click)="save()">
+            <span class="material-symbols-outlined">person_add</span>
+            {{ saving() ? 'Saving…' : (isEdit() ? 'Save Changes' : 'Add to Circle') }}
+          </button>
+          <a class="btn-cancel" routerLink="/people">Cancel</a>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>

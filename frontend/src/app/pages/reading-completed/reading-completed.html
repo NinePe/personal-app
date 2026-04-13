@@ -1,0 +1,136 @@
+<div class="page">
+  <div class="orb orb--tr"></div>
+
+  <nav class="top-nav">
+    <div class="nav-left">
+      <a class="nav-back" routerLink="/reading" title="Back to library">
+        <span class="material-symbols-outlined">arrow_back</span>
+      </a>
+      <span class="nav-brand">Reading</span>
+      <div class="nav-links">
+        <a class="nav-link" routerLink="/reading">Library</a>
+        <a class="nav-link nav-link--active" routerLink="/reading/completed">Completed</a>
+        <a class="nav-link" routerLink="/reading/authors">Authors</a>
+        <a class="nav-link" routerLink="/reading/sagas">Sagas</a>
+        <a class="nav-link" routerLink="/reading/genres">Genres</a>
+      </div>
+    </div>
+    <div class="nav-right">
+      <a class="btn-add-book" routerLink="/reading/new-book">
+        <span class="material-symbols-outlined">add</span>
+        Add Book
+      </a>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <header class="page-header">
+      <div>
+        <span class="eyebrow">Library</span>
+        <h1 class="page-title">Completed Books</h1>
+        <p class="page-sub">Every story you've finished. Click the stars to rate them.</p>
+      </div>
+      <div class="header-stats">
+        <div class="stat-chip">
+          <span class="stat-num">{{ books().length }}</span>
+          <span class="stat-label">Completed</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-num">{{ avgRating() }}</span>
+          <app-star-rating [value]="avgRating()" [readonly]="true" class="sm" />
+          <span class="stat-label">Avg rating</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-num">{{ totalPages().toLocaleString() }}</span>
+          <span class="stat-label">Pages read</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="search-bar">
+        <span class="material-symbols-outlined">search</span>
+        <input type="text" placeholder="Search by title or author…"
+               [value]="query()"
+               (input)="query.set($any($event.target).value)" />
+      </div>
+      <div class="sort-tabs">
+        <button class="sort-btn" [class.active]="sortBy() === 'finished'" (click)="sortBy.set('finished')">Recent</button>
+        <button class="sort-btn" [class.active]="sortBy() === 'rating'"   (click)="sortBy.set('rating')">Top Rated</button>
+        <button class="sort-btn" [class.active]="sortBy() === 'title'"    (click)="sortBy.set('title')">A–Z</button>
+      </div>
+    </div>
+
+    @if (loading()) {
+      <div class="grid">
+        @for (_ of [1,2,3,4,5,6]; track $index) {
+          <div class="skeleton-card"></div>
+        }
+      </div>
+    } @else if (!filtered().length) {
+      <div class="empty-state">
+        <span class="material-symbols-outlined">menu_book</span>
+        <h3>{{ query() ? 'No matches' : 'No completed books yet' }}</h3>
+        <p>{{ query() ? 'Try a different keyword.' : 'Finish your first book and come back to rate it!' }}</p>
+      </div>
+    } @else {
+      <div class="grid">
+        @for (book of filtered(); track book.id) {
+          <div class="book-card" (click)="openBook(book)">
+            <div class="cover">
+              @if (book.cover_url) {
+                <img [src]="book.cover_url" [alt]="book.title" />
+              } @else {
+                <div class="cover-placeholder">
+                  <span class="material-symbols-outlined">auto_stories</span>
+                </div>
+              }
+            </div>
+
+            <div class="book-info">
+              <h3 class="book-title">{{ book.title }}</h3>
+              <p class="book-author">{{ authorNames(book) }}</p>
+
+              <div class="stars-area" (click)="$event.stopPropagation()">
+                <app-star-rating class="sm"
+                  [value]="+(book.rating ?? 0)"
+                  (valueChange)="rateBook(book, $event)"
+                  [showLabel]="true"
+                />
+              </div>
+
+              <div class="book-meta">
+                <label class="meta-date" (click)="$event.stopPropagation()">
+                  <span class="material-symbols-outlined">check_circle</span>
+                  <input type="date" class="date-inline"
+                         [value]="toDateInput(book.finished_at)"
+                         (change)="updateFinished(book, $any($event.target).value)" />
+                </label>
+                @if (book.page_count) {
+                  <span class="meta-item">
+                    <span class="material-symbols-outlined">auto_stories</span>
+                    {{ book.page_count }} pages
+                  </span>
+                }
+                @if (book.book_type) {
+                  <span class="meta-item">{{ book.book_type.name }}</span>
+                }
+              </div>
+
+              @if (book.genres?.length) {
+                <div class="genre-pills">
+                  @for (g of book.genres; track g.id) {
+                    <span class="genre-pill">{{ g.name }}</span>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+  </main>
+</div>

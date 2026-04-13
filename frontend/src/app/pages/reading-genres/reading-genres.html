@@ -1,0 +1,174 @@
+<div class="page">
+  <div class="orb orb--tr"></div>
+
+  <!-- ── Nav ─────────────────────────────────────── -->
+  <nav class="top-nav">
+    <div class="nav-left">
+      <a class="nav-back" routerLink="/reading" title="Back to library">
+        <span class="material-symbols-outlined">arrow_back</span>
+      </a>
+      <span class="nav-brand">Reading</span>
+      <div class="nav-links">
+        <a class="nav-link" routerLink="/reading">Library</a>
+        <a class="nav-link" routerLink="/reading/authors">Authors</a>
+        <a class="nav-link" routerLink="/reading/sagas">Sagas</a>
+        <a class="nav-link nav-link--active" routerLink="/reading/genres">Genres</a>
+      </div>
+    </div>
+    <div class="nav-right">
+      <button class="btn-primary" (click)="openNew()">
+        <span class="material-symbols-outlined">add</span>
+        New Genre
+      </button>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <header class="page-header">
+      <div>
+        <span class="eyebrow">Masters</span>
+        <h1 class="page-title">Genres</h1>
+        <p class="page-sub">The categories that flavour your library.</p>
+      </div>
+      <div class="header-stats">
+        <div class="stat-chip">
+          <span class="stat-num">{{ genres().length }}</span>
+          <span class="stat-label">Total</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-num">{{ totalUsed() }}</span>
+          <span class="stat-label">In use</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-num">{{ totalBooksTagged() }}</span>
+          <span class="stat-label">Tagged books</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="search-bar">
+      <span class="material-symbols-outlined">search</span>
+      <input type="text" placeholder="Search genres…"
+             [value]="query()"
+             (input)="query.set($any($event.target).value)" />
+    </div>
+
+    <!-- Inline new form -->
+    @if (showNew()) {
+      <div class="new-form">
+        <input class="input" type="text" placeholder="New genre name"
+               [value]="newName()"
+               (input)="newName.set($any($event.target).value)"
+               (keydown.enter)="create()"
+               (keydown.escape)="cancelNew()"
+               autofocus />
+        <button class="btn-confirm" [disabled]="saving() || !newName().trim()" (click)="create()">
+          {{ saving() ? 'Saving…' : 'Create' }}
+        </button>
+        <button class="btn-cancel" (click)="cancelNew()">Cancel</button>
+      </div>
+    }
+
+    @if (loading()) {
+      <div class="genre-grid">
+        @for (_ of [1,2,3,4,5,6,7,8,9]; track $index) {
+          <div class="skeleton-chip"></div>
+        }
+      </div>
+    } @else if (!filtered().length) {
+      <div class="empty-state">
+        <span class="material-symbols-outlined">label_off</span>
+        <h3>{{ query() ? 'No genres match' : 'No genres yet' }}</h3>
+        <p>{{ query() ? 'Try a different keyword.' : 'Add your first genre to start tagging books.' }}</p>
+        @if (!query()) {
+          <button class="btn-primary" (click)="openNew()">
+            <span class="material-symbols-outlined">add</span>
+            Create genre
+          </button>
+        }
+      </div>
+    } @else {
+      <div class="genre-grid">
+        @for (g of filtered(); track g.id) {
+          <div class="genre-chip" [class.genre-chip--used]="(g.book_count ?? 0) > 0"
+               (click)="openDetail(g)">
+            @if (editingId() === g.id) {
+              <input class="chip-edit" type="text"
+                     [value]="editName()"
+                     (input)="editName.set($any($event.target).value)"
+                     (keydown.enter)="saveEdit(g)"
+                     (keydown.escape)="cancelEdit()"
+                     (blur)="saveEdit(g)"
+                     (click)="$event.stopPropagation()"
+                     autofocus />
+            } @else {
+              <span class="chip-name">{{ g.name }}</span>
+              <span class="chip-count" [class.chip-count--zero]="!g.book_count">
+                {{ g.book_count ?? 0 }}
+              </span>
+              <div class="chip-actions">
+                <button class="chip-btn" (click)="startEdit(g, $event)" title="Rename">
+                  <span class="material-symbols-outlined">edit</span>
+                </button>
+                <button class="chip-btn chip-btn--del" (click)="delete(g, $event)" title="Delete">
+                  <span class="material-symbols-outlined">delete</span>
+                </button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </main>
+
+  <!-- ── Detail drawer ──────────────────────────── -->
+  @if (detailGenre(); as dg) {
+    <div class="modal-backdrop" (click)="closeDetail()">
+      <div class="drawer" (click)="$event.stopPropagation()">
+        <div class="drawer-head">
+          <div class="drawer-head-info">
+            <div class="drawer-icon">
+              <span class="material-symbols-outlined">local_offer</span>
+            </div>
+            <div>
+              <h2>{{ dg.name }}</h2>
+              <p>{{ dg.book_count ?? 0 }} {{ dg.book_count === 1 ? 'book tagged' : 'books tagged' }}</p>
+            </div>
+          </div>
+          <button class="modal-close" (click)="closeDetail()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div class="drawer-body">
+          @if (detailLoading()) {
+            <div class="skeleton-list">
+              @for (_ of [1,2,3]; track $index) { <div class="skeleton-row"></div> }
+            </div>
+          } @else if (!detailBooks().length) {
+            <p class="drawer-empty">No books tagged with this genre yet.</p>
+          } @else {
+            <div class="drawer-books">
+              @for (b of detailBooks(); track b.id) {
+                <a class="drawer-book" [routerLink]="['/reading/new-book', b.id]">
+                  <div class="drawer-book-cover">
+                    @if (b.cover_url) {
+                      <img [src]="b.cover_url" [alt]="b.title" />
+                    } @else {
+                      <span class="material-symbols-outlined">auto_stories</span>
+                    }
+                  </div>
+                  <div class="drawer-book-info">
+                    <p class="drawer-book-title">{{ b.title }}</p>
+                    <p class="drawer-book-sub">{{ authorNames(b) }}</p>
+                  </div>
+                </a>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

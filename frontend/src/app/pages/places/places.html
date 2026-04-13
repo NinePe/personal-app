@@ -1,0 +1,204 @@
+<div class="page">
+  <div class="orb orb--tr"></div>
+  <div class="orb orb--bl"></div>
+
+  <!-- ── Nav ─────────────────────────────────────── -->
+  <nav class="top-nav">
+    <div class="nav-left">
+      <a class="nav-back" routerLink="/" title="Back to home"><span class="material-symbols-outlined">arrow_back</span></a>
+      <span class="nav-brand">Spending</span>
+      <div class="nav-links">
+        <a class="nav-link" routerLink="/income">Income</a>
+        <a class="nav-link" routerLink="/expenses">Expenses</a>
+        <a class="nav-link" routerLink="/payments">Payments</a>
+        <a class="nav-link" routerLink="/people">People</a>
+        <a class="nav-link" routerLink="/loans">Loans</a>
+        <a class="nav-link nav-link--active" routerLink="/places">Places</a>
+        <a class="nav-link" routerLink="/budget">Budget</a>
+        <a class="nav-link" routerLink="/projections">Projections</a>
+      </div>
+    </div>
+    <div class="nav-right">
+      <a class="btn-add-income" routerLink="/new-income">
+        <span class="material-symbols-outlined">add</span>
+        Add Income
+      </a>
+      <a class="btn-add-expense" routerLink="/spending">
+        <span class="material-symbols-outlined">add</span>
+        Add Expense
+      </a>
+      <span class="material-symbols-outlined nav-icon">notifications</span>
+      <span class="material-symbols-outlined nav-icon">account_circle</span>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- ── Page header ──────────────────────────────── -->
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Saved Places</h1>
+        <p class="page-sub">Discover your spending patterns across locations.</p>
+      </div>
+      <a class="btn-add-place" routerLink="/new-place">
+        <span class="material-symbols-outlined">add_location_alt</span>
+        Add Place
+      </a>
+    </div>
+
+    <!-- ── Filter bar ──────────────────────────────── -->
+    <div class="filter-bar">
+      <div class="filter-tabs">
+        <button class="filter-tab" [class.active]="filter() === 'month'" (click)="setFilter('month')">This Month</button>
+        <button class="filter-tab" [class.active]="filter() === 'year'"  (click)="setFilter('year')">This Year</button>
+        <button class="filter-tab" [class.active]="filter() === 'all'"   (click)="setFilter('all')">All Time</button>
+        <button class="filter-tab" [class.active]="filter() === 'custom'" (click)="setFilter('custom')">Custom</button>
+      </div>
+
+      @if (filter() === 'custom') {
+        <div class="date-range">
+          <input class="date-input" type="date" [value]="customFrom()"
+                 (change)="customFrom.set($any($event.target).value)" />
+          <span class="date-sep">→</span>
+          <input class="date-input" type="date" [value]="customTo()"
+                 (change)="customTo.set($any($event.target).value)" />
+          <button class="btn-apply" (click)="applyCustom()">Apply</button>
+        </div>
+      }
+
+      <!-- Search -->
+      <div class="search-wrap">
+        <span class="material-symbols-outlined search-icon">search</span>
+        <input class="search-input" type="text" placeholder="Search places…"
+               [value]="search()" (input)="search.set($any($event.target).value)" />
+      </div>
+    </div>
+
+    <!-- ── Category filter pills ──────────────────── -->
+    <div class="cat-filter-row">
+      @for (cat of categories(); track cat.id) {
+        <button class="cat-filter-pill"
+                [class.active]="activeCategory() === cat.name"
+                [style.--c]="cat.color"
+                (click)="toggleCategory(cat.name)">
+          <span class="material-symbols-outlined">{{ cat.icon }}</span>
+          {{ cat.name }}
+        </button>
+      }
+    </div>
+
+    <!-- ── Stats summary ──────────────────────────── -->
+    @if (!loading()) {
+      <div class="stats-strip">
+        <div class="stat-pill">
+          <span class="material-symbols-outlined">location_on</span>
+          <span><strong>{{ filtered().length }}</strong> places</span>
+        </div>
+        <div class="stat-pill">
+          <span class="material-symbols-outlined">payments</span>
+          <span>Total spent: <strong>{{ fmt(totalSpent()) }}</strong></span>
+        </div>
+        <div class="stat-pill">
+          <span class="material-symbols-outlined">calendar_month</span>
+          <span>{{ filterLabel() }}</span>
+        </div>
+      </div>
+    }
+
+    <!-- ── Places grid ────────────────────────────── -->
+    @if (loading()) {
+      <div class="places-grid">
+        @for (_ of [1,2,3,4,5,6]; track $index) {
+          <div class="place-card place-card--skeleton">
+            <div class="skeleton-img"></div>
+            <div class="skeleton-body">
+              <div class="skeleton-line skeleton-line--wide"></div>
+              <div class="skeleton-line skeleton-line--narrow"></div>
+            </div>
+          </div>
+        }
+      </div>
+    } @else if (!filtered().length) {
+      <div class="empty-state">
+        <div class="empty-orb">
+          <span class="material-symbols-outlined">add_location_alt</span>
+        </div>
+        <h3 class="empty-title">No places found</h3>
+        <p class="empty-desc">Add your first place to start tracking spending by location.</p>
+        <a class="btn-add-place" routerLink="/new-place">
+          <span class="material-symbols-outlined">add_location_alt</span>
+          Add Place
+        </a>
+      </div>
+    } @else {
+      <div class="places-grid">
+        @for (place of filtered(); track place.id) {
+          <article class="place-card" [class.place-card--no-visits]="place.visit_count === 0">
+
+            <!-- Icon banner -->
+            <div class="place-card__banner" [style.background]="categoryMeta(place.category).color + '18'">
+              <div class="place-card__icon-circle" [style.background]="categoryMeta(place.category).color + '22'">
+                <span class="material-symbols-outlined" [style.color]="categoryMeta(place.category).color">
+                  {{ categoryMeta(place.category).icon }}
+                </span>
+              </div>
+              <span class="place-cat-badge"
+                    [style.background]="categoryMeta(place.category).color + '22'"
+                    [style.color]="categoryMeta(place.category).color">
+                {{ place.category || 'Other' }}
+              </span>
+              <a class="place-card__edit" [routerLink]="['/new-place', place.id]" title="Edit">
+                <span class="material-symbols-outlined">edit</span>
+              </a>
+              <button class="place-card__delete" (click)="deletePlace(place.id)" title="Delete">
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <!-- Body -->
+            <div class="place-card__body">
+              <h3 class="place-card__name">{{ place.name }}</h3>
+              @if (place.address) {
+                <p class="place-card__address">
+                  <span class="material-symbols-outlined">location_on</span>
+                  {{ place.address }}
+                </p>
+              }
+              @if (place.notes) {
+                <p class="place-card__notes">{{ place.notes }}</p>
+              }
+            </div>
+
+            <!-- Footer -->
+            <div class="place-card__footer">
+              <div class="place-spend">
+                <span class="place-spend__label">Spent</span>
+                <span class="place-spend__amount" [style.color]="categoryMeta(place.category).color">
+                  {{ fmt(place.total_spent) }}
+                </span>
+                <span class="place-spend__visits">{{ place.visit_count }} visit{{ place.visit_count !== 1 ? 's' : '' }}</span>
+              </div>
+              <div class="place-last">
+                <span class="material-symbols-outlined">schedule</span>
+                {{ formatLastVisit(place.last_visit) }}
+              </div>
+            </div>
+
+          </article>
+        }
+
+        <!-- Add place card -->
+        <a class="place-card place-card--add" routerLink="/new-place">
+          <div class="place-card__add-inner">
+            <div class="place-add-orb">
+              <span class="material-symbols-outlined">add_location_alt</span>
+            </div>
+            <span class="place-add-label">Add New Place</span>
+            <span class="place-add-sub">Curate another favorite spot</span>
+          </div>
+        </a>
+      </div>
+    }
+
+  </main>
+</div>

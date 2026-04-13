@@ -1,0 +1,191 @@
+<div class="page">
+  <div class="orb orb--tr"></div>
+  <div class="orb orb--bl"></div>
+
+  <!-- ── Nav ─────────────────────────────────────── -->
+  <nav class="top-nav">
+    <div class="nav-left">
+      <a class="nav-back" routerLink="/" title="Back to home"><span class="material-symbols-outlined">arrow_back</span></a>
+      <span class="nav-brand">Spending</span>
+      <div class="nav-links">
+        <a class="nav-link" routerLink="/income">Income</a>
+        <a class="nav-link" routerLink="/expenses">Expenses</a>
+        <a class="nav-link" routerLink="/payments">Payments</a>
+        <a class="nav-link" routerLink="/people">People</a>
+        <a class="nav-link nav-link--active" routerLink="/loans">Loans</a>
+        <a class="nav-link" routerLink="/places">Places</a>
+        <a class="nav-link" routerLink="/budget">Budget</a>
+        <a class="nav-link" routerLink="/projections">Projections</a>
+      </div>
+    </div>
+    <div class="nav-right">
+      <a class="btn-add-income" routerLink="/new-income">
+        <span class="material-symbols-outlined">add</span>
+        Add Income
+      </a>
+      <a class="btn-add-expense" routerLink="/spending">
+        <span class="material-symbols-outlined">add</span>
+        Add Expense
+      </a>
+      <span class="material-symbols-outlined nav-icon">notifications</span>
+      <span class="material-symbols-outlined nav-icon">account_circle</span>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- ── Header ───────────────────────────────────── -->
+    <header class="page-header">
+      <h1 class="page-title">Loan Overview</h1>
+      <p class="page-sub">Manage your interpersonal balances and active credit.</p>
+    </header>
+
+    <!-- ── Top summary cards ────────────────────────── -->
+    <div class="summary-grid">
+      <div class="summary-card summary-card--lent">
+        <div class="summary-card__head">
+          <div>
+            <p class="summary-card__label">Total Owed to Me</p>
+            <h3 class="summary-card__value">{{ fmt(totalOwedToMe()) }}</h3>
+          </div>
+          <div class="summary-card__icon-box">
+            <span class="material-symbols-outlined">trending_up</span>
+          </div>
+        </div>
+        <div class="summary-card__foot">
+          <span class="material-symbols-outlined">group</span>
+          {{ summary()?.totals?.borrowers ?? 0 }} active borrower{{ summary()?.totals?.borrowers === 1 ? '' : 's' }}
+        </div>
+      </div>
+
+      <div class="summary-card summary-card--borrowed">
+        <div class="summary-card__head">
+          <div>
+            <p class="summary-card__label">Total I Owe</p>
+            <h3 class="summary-card__value">{{ fmt(totalIOwe()) }}</h3>
+          </div>
+          <div class="summary-card__icon-box">
+            <span class="material-symbols-outlined">trending_down</span>
+          </div>
+        </div>
+        <div class="summary-card__foot">
+          <span class="material-symbols-outlined">account_balance</span>
+          {{ summary()?.totals?.creditors ?? 0 }} active creditor{{ summary()?.totals?.creditors === 1 ? '' : 's' }}
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Bento layout ────────────────────────────── -->
+    <div class="bento-grid">
+
+      <!-- Connections (people list) -->
+      <section class="bento bento--connections">
+        <div class="bento__header">
+          <div>
+            <h2 class="section-title">Connections</h2>
+            <p class="section-sub">Only people with open balances</p>
+          </div>
+          <div class="filter-tabs">
+            <button class="filter-tab" [class.active]="filter() === 'all'"      (click)="filter.set('all')">All</button>
+            <button class="filter-tab" [class.active]="filter() === 'lent'"     (click)="filter.set('lent')">Owe me</button>
+            <button class="filter-tab" [class.active]="filter() === 'borrowed'" (click)="filter.set('borrowed')">I owe</button>
+          </div>
+        </div>
+
+        @if (loading()) {
+          @for (_ of [1,2,3,4]; track $index) {
+            <div class="person-skeleton"></div>
+          }
+        } @else if (!filteredPeople().length) {
+          <div class="empty-state">
+            <div class="empty-state__orb">
+              <span class="material-symbols-outlined">handshake</span>
+            </div>
+            <h3>No active loans</h3>
+            <p>
+              @if (filter() === 'all') { All balances are settled. }
+              @else if (filter() === 'lent') { Nobody owes you money. }
+              @else { You don't owe anyone. }
+            </p>
+            <a class="btn-add-primary" routerLink="/new-loan">
+              <span class="material-symbols-outlined">add</span>
+              Log Transaction
+            </a>
+          </div>
+        } @else {
+          <div class="person-list">
+            @for (p of filteredPeople(); track p.id) {
+              <a class="person-row" [routerLink]="['/loan-history', p.id]">
+                <div class="person-row__left">
+                  @if (p.avatar_url) {
+                    <img class="person-avatar" [src]="p.avatar_url" [alt]="p.name" />
+                  } @else {
+                    <div class="person-avatar person-avatar--initials"
+                         [class.person-avatar--lent]="isLent(p)"
+                         [class.person-avatar--borrowed]="isBorrowed(p)">
+                      {{ initial(p.name) }}
+                    </div>
+                  }
+                  <div class="person-info">
+                    <h4 class="person-name">{{ p.name }}</h4>
+                    <p class="person-meta">
+                      {{ p.last_description || (isLent(p) ? 'Active loan' : 'Outstanding debt') }}
+                      <span class="dot-sep">·</span>
+                      {{ p.transaction_count }} tx
+                      @if (p.last_activity) {
+                        <span class="dot-sep">·</span>
+                        {{ fmtDate(p.last_activity) }}
+                      }
+                    </p>
+                  </div>
+                </div>
+                <div class="person-row__right">
+                  <span class="pill" [class.pill--lent]="isLent(p)" [class.pill--borrowed]="isBorrowed(p)">
+                    {{ isLent(p) ? 'Owes me' : 'I owe' }}
+                  </span>
+                  <p class="person-amount" [class.amt--lent]="isLent(p)" [class.amt--borrowed]="isBorrowed(p)">
+                    {{ fmt(absBalance(p)) }}
+                  </p>
+                </div>
+              </a>
+            }
+          </div>
+        }
+      </section>
+
+      <!-- Side column: CTA + Net flow -->
+      <aside class="bento-side">
+        <div class="cta-card">
+          <h3 class="cta-card__title">Start Transaction</h3>
+          <p class="cta-card__desc">Ready to lend or track a new debt? Keep your ledger balanced.</p>
+          <a class="cta-card__btn" routerLink="/new-loan">Add Transaction</a>
+          <span class="material-symbols-outlined cta-card__bg-icon">sync_alt</span>
+        </div>
+
+        <div class="flow-card">
+          <h4 class="flow-card__title">Net Position</h4>
+          <p class="flow-card__value" [class.flow-card__value--pos]="netWorth() >= 0"
+                                      [class.flow-card__value--neg]="netWorth() < 0">
+            {{ netWorth() >= 0 ? '+' : '-' }}{{ fmt(netWorth() >= 0 ? netWorth() : -netWorth()) }}
+          </p>
+          <p class="flow-card__hint">
+            {{ netWorth() >= 0 ? 'You are a net lender' : 'You are a net borrower' }}
+          </p>
+          <div class="flow-breakdown">
+            <div class="flow-row">
+              <span class="flow-dot flow-dot--lent"></span>
+              <span class="flow-label">Lent out</span>
+              <span class="flow-amt">{{ fmt(totalOwedToMe()) }}</span>
+            </div>
+            <div class="flow-row">
+              <span class="flow-dot flow-dot--borrowed"></span>
+              <span class="flow-label">Borrowed</span>
+              <span class="flow-amt">{{ fmt(totalIOwe()) }}</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+    </div>
+  </main>
+</div>

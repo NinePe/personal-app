@@ -1,0 +1,261 @@
+<div class="page">
+  <div class="orb orb--tr"></div>
+
+  <!-- ── Nav ─────────────────────────────────────── -->
+  <nav class="top-nav">
+    <div class="nav-left">
+      <a class="nav-back" routerLink="/reading" title="Back to library">
+        <span class="material-symbols-outlined">arrow_back</span>
+      </a>
+      <span class="nav-brand">Reading</span>
+      <div class="nav-links">
+        <a class="nav-link" routerLink="/reading">Library</a>
+        <a class="nav-link nav-link--active" routerLink="/reading/session">Read Now</a>
+      </div>
+    </div>
+    <div class="nav-right">
+      <a class="btn-add-book" routerLink="/reading/new-book">
+        <span class="material-symbols-outlined">add</span>
+        Add Book
+      </a>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <header class="page-header">
+      <span class="eyebrow">Reading Session</span>
+      <h1 class="page-title">Read Now</h1>
+      <p class="page-sub">Pick a book, track your page, and time your session.</p>
+    </header>
+
+    @if (loading() && !selected()) {
+      <div class="skeleton-hero"></div>
+    } @else if (!books().length) {
+      <div class="empty-state">
+        <span class="material-symbols-outlined">auto_stories</span>
+        <h3>No books in progress</h3>
+        <p>Mark a book as "Currently Reading" to start tracking sessions.</p>
+        <a class="btn-add-book" routerLink="/reading/new-book">
+          <span class="material-symbols-outlined">add</span>
+          Add book
+        </a>
+      </div>
+    } @else {
+
+      <!-- ── Book picker strip ───────────────────── -->
+      <div class="book-strip">
+        @for (b of books(); track b.id) {
+          <button class="strip-card" [class.active]="selected()?.id === b.id"
+                  (click)="pickBook(b)">
+            <div class="strip-cover">
+              @if (b.cover_url) {
+                <img [src]="b.cover_url" [alt]="b.title" />
+              } @else {
+                <div class="strip-placeholder">
+                  <span class="material-symbols-outlined">auto_stories</span>
+                </div>
+              }
+            </div>
+            <div class="strip-info">
+              <p class="strip-title">{{ b.title }}</p>
+              <p class="strip-author">{{ authorNames(b) }}</p>
+            </div>
+            @if (selected()?.id === b.id) {
+              <span class="material-symbols-outlined strip-check">check_circle</span>
+            }
+          </button>
+        }
+      </div>
+
+      @if (selected(); as book) {
+        <div class="session-grid">
+
+          <!-- ── LEFT: timer + page ─────────────── -->
+          <section class="timer-card">
+
+            <div class="cover-head">
+              <div class="mini-cover">
+                @if (book.cover_url) {
+                  <img [src]="book.cover_url" [alt]="book.title" />
+                } @else {
+                  <div class="mini-placeholder">
+                    <span class="material-symbols-outlined">auto_stories</span>
+                  </div>
+                }
+              </div>
+              <div>
+                <h2 class="session-title">{{ book.title }}</h2>
+                <p class="session-author">by {{ authorNames(book) }}</p>
+                <div class="progress-line">
+                  <div class="progress-bar-mini">
+                    <div class="progress-fill-mini" [style.width]="progressPct() + '%'"></div>
+                  </div>
+                  <span class="progress-text">{{ progressPct() }}%</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Current page editor -->
+            <div class="page-editor">
+              <label class="field-label">Current Page</label>
+              <div class="page-row">
+                <input class="page-input" type="number" min="0"
+                       [disabled]="running()"
+                       [value]="pageInput() ?? ''"
+                       (input)="pageInput.set(+$any($event.target).value || 0)" />
+                @if (book.page_count) {
+                  <span class="page-of">of {{ book.page_count }}</span>
+                }
+                @if (!running() && pageInput() !== (book.current_page ?? 0)) {
+                  <button class="btn-save-page" (click)="savePage()" [disabled]="savingPage()">
+                    {{ savingPage() ? 'Saving…' : 'Save page' }}
+                  </button>
+                }
+              </div>
+            </div>
+
+            <!-- Timer display -->
+            <div class="timer-box" [class.timer-box--running]="running()">
+              <p class="timer-label">
+                {{ running() ? 'Session in progress' : 'Ready to start' }}
+              </p>
+              <p class="timer-value">{{ elapsedLabel() }}</p>
+              @if (running() && startPage() !== null) {
+                <p class="timer-hint">
+                  Started on page <b>{{ startPage() }}</b>
+                </p>
+              }
+            </div>
+
+            <!-- Actions -->
+            <div class="timer-actions">
+              @if (!running()) {
+                <button class="btn-start" (click)="startSession()">
+                  <span class="material-symbols-outlined">play_circle</span>
+                  Start Session
+                </button>
+              } @else {
+                <button class="btn-end" (click)="openEndModal()">
+                  <span class="material-symbols-outlined">stop_circle</span>
+                  End Session
+                </button>
+                <button class="btn-discard" (click)="discardSession()">
+                  Discard
+                </button>
+              }
+            </div>
+
+            @if (success()) {
+              <div class="banner banner--success">
+                <span class="material-symbols-outlined">check_circle</span>
+                {{ success() }}
+              </div>
+            }
+            @if (error()) {
+              <div class="banner banner--error">
+                <span class="material-symbols-outlined">error</span>
+                {{ error() }}
+              </div>
+            }
+          </section>
+
+          <!-- ── RIGHT: stats + history ─────────── -->
+          <aside class="stats-col">
+            <div class="stats-card">
+              <h3 class="stats-title">Book Stats</h3>
+              <div class="stats-grid">
+                <div class="stat">
+                  <span class="material-symbols-outlined">schedule</span>
+                  <span class="stat-value">{{ formatHoursLabel(totalHours()) }}</span>
+                  <span class="stat-label">Total time</span>
+                </div>
+                <div class="stat">
+                  <span class="material-symbols-outlined">auto_stories</span>
+                  <span class="stat-value">{{ stats()?.pages_read_sessions ?? 0 }}</span>
+                  <span class="stat-label">Pages in sessions</span>
+                </div>
+                <div class="stat">
+                  <span class="material-symbols-outlined">replay</span>
+                  <span class="stat-value">{{ stats()?.session_count ?? 0 }}</span>
+                  <span class="stat-label">Sessions</span>
+                </div>
+                <div class="stat">
+                  <span class="material-symbols-outlined">menu_book</span>
+                  <span class="stat-value">{{ book.current_page ?? 0 }}</span>
+                  <span class="stat-label">Current page</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="history-card">
+              <h3 class="stats-title">Recent Sessions</h3>
+              @if (!recentSessions().length) {
+                <p class="empty-text">No sessions yet. Start your first timer!</p>
+              } @else {
+                <div class="history-list">
+                  @for (s of recentSessions().slice(0, 6); track s.id) {
+                    <div class="history-row">
+                      <div class="history-date">{{ formatDate(s.started_at) }}</div>
+                      <div class="history-detail">
+                        <span class="history-pages">{{ s.start_page }} → {{ s.end_page }}</span>
+                        <span class="history-dur">{{ formatDuration(s.duration_seconds) }}</span>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </aside>
+        </div>
+      }
+    }
+
+  </main>
+
+  <!-- ── End session modal ─────────────────────── -->
+  @if (showEndModal()) {
+    <div class="modal-backdrop" (click)="showEndModal.set(false)">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-head">
+          <h3>End session</h3>
+          <button class="modal-close" (click)="showEndModal.set(false)">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <p class="modal-sub">You read for <b>{{ elapsedLabel() }}</b>. What page did you end on?</p>
+
+          <div class="end-page-row">
+            <div class="end-page-group">
+              <label class="field-label">Started on</label>
+              <div class="end-page-display">{{ startPage() }}</div>
+            </div>
+            <span class="material-symbols-outlined end-arrow">arrow_forward</span>
+            <div class="end-page-group">
+              <label class="field-label">Ended on</label>
+              <input class="end-page-input" type="number" min="0"
+                     [value]="endPage() ?? ''"
+                     (input)="endPage.set(+$any($event.target).value || 0)"
+                     autofocus />
+            </div>
+          </div>
+
+          @if (endPage() != null && startPage() != null && endPage()! >= startPage()!) {
+            <p class="modal-summary">
+              You'll read <b>{{ endPage()! - startPage()! }} pages</b> this session.
+            </p>
+          }
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-cancel" (click)="showEndModal.set(false)">Cancel</button>
+          <button class="btn-confirm" [disabled]="saving()" (click)="confirmEnd()">
+            {{ saving() ? 'Saving…' : 'Save Session' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

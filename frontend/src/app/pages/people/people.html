@@ -1,0 +1,179 @@
+<div class="page">
+  <div class="orb orb--tr"></div>
+  <div class="orb orb--bl"></div>
+
+  <!-- ── Nav ─────────────────────────────────────── -->
+  <nav class="top-nav">
+    <div class="nav-left">
+      <a class="nav-back" routerLink="/" title="Back to home"><span class="material-symbols-outlined">arrow_back</span></a>
+      <span class="nav-brand">Spending</span>
+      <div class="nav-links">
+        <a class="nav-link" routerLink="/income">Income</a>
+        <a class="nav-link" routerLink="/expenses">Expenses</a>
+        <a class="nav-link" routerLink="/payments">Payments</a>
+        <a class="nav-link nav-link--active" routerLink="/people">People</a>
+        <a class="nav-link" routerLink="/loans">Loans</a>
+        <a class="nav-link" routerLink="/places">Places</a>
+        <a class="nav-link" routerLink="/budget">Budget</a>
+        <a class="nav-link" routerLink="/projections">Projections</a>
+      </div>
+    </div>
+    <div class="nav-right">
+      <a class="btn-add-income" routerLink="/new-income">
+        <span class="material-symbols-outlined">add</span>
+        Add Income
+      </a>
+      <a class="btn-add-expense" routerLink="/spending">
+        <span class="material-symbols-outlined">add</span>
+        Add Expense
+      </a>
+      <span class="material-symbols-outlined nav-icon">notifications</span>
+      <span class="material-symbols-outlined nav-icon">account_circle</span>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- ── Page header ──────────────────────────────── -->
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Your Circle</h1>
+        <p class="page-sub">People you share expenses with</p>
+      </div>
+      <a class="btn-add-person" routerLink="/new-person">
+        <span class="material-symbols-outlined">person_add</span>
+        Add Person
+      </a>
+    </div>
+
+    <!-- ── Date filter tabs ──────────────────────────── -->
+    <div class="date-filters">
+      <button class="date-filter-btn" [class.active]="activeFilter() === 'month'" (click)="setFilter('month')">This Month</button>
+      <button class="date-filter-btn" [class.active]="activeFilter() === 'year'"  (click)="setFilter('year')">This Year</button>
+      <button class="date-filter-btn" [class.active]="activeFilter() === 'all'"   (click)="setFilter('all')">All Time</button>
+      <button class="date-filter-btn" [class.active]="activeFilter() === 'custom'" (click)="setFilter('custom')">Custom</button>
+    </div>
+
+    @if (activeFilter() === 'custom') {
+      <div class="custom-range">
+        <input type="date" class="date-input"
+          [value]="customFrom()"
+          (change)="customFrom.set($any($event.target).value)" />
+        <span class="range-sep">–</span>
+        <input type="date" class="date-input"
+          [value]="customTo()"
+          (change)="customTo.set($any($event.target).value)" />
+        <button class="btn-apply" (click)="applyCustom()">Apply</button>
+      </div>
+    }
+
+    <!-- ── Stats row ──────────────────────────────────── -->
+    <div class="stats-row">
+      <div class="stat-chip">
+        <span class="material-symbols-outlined stat-chip__icon stat-chip__icon--primary">group</span>
+        <div>
+          <p class="stat-chip__label">Circle members</p>
+          <p class="stat-chip__value">{{ loading() ? '—' : people().length }}</p>
+        </div>
+      </div>
+      <div class="stat-chip">
+        <span class="material-symbols-outlined stat-chip__icon stat-chip__icon--secondary">receipt_long</span>
+        <div>
+          <p class="stat-chip__label">Shared {{ periodLabel() }}</p>
+          <p class="stat-chip__value">{{ loading() ? '—' : fmt(totalShared()) }}</p>
+        </div>
+      </div>
+      <div class="stat-chip">
+        <span class="material-symbols-outlined stat-chip__icon stat-chip__icon--tertiary">bar_chart</span>
+        <div>
+          <p class="stat-chip__label">Avg per person</p>
+          <p class="stat-chip__value">{{ loading() ? '—' : fmt(avgPerPerson()) }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── People grid ──────────────────────────────── -->
+    @if (loading()) {
+      <div class="people-grid">
+        @for (_ of [1,2,3,4,5,6]; track $index) {
+          <div class="person-card person-card--skeleton">
+            <div class="skeleton-avatar"></div>
+            <div class="skeleton-lines">
+              <div class="skeleton-line skeleton-line--wide"></div>
+              <div class="skeleton-line skeleton-line--narrow"></div>
+            </div>
+          </div>
+        }
+      </div>
+    } @else if (!people().length) {
+      <div class="empty-state">
+        <div class="empty-orb">
+          <span class="material-symbols-outlined empty-icon">group_add</span>
+        </div>
+        <h3 class="empty-title">Your circle is empty</h3>
+        <p class="empty-desc">Add friends, family, or coworkers to track shared expenses.</p>
+        <a class="btn-add-person" routerLink="/new-person">
+          <span class="material-symbols-outlined">person_add</span>
+          Add your first person
+        </a>
+      </div>
+    } @else {
+      <div class="people-grid">
+        @for (person of people(); track person.id) {
+          <div class="person-card">
+            <a class="person-card__edit" [routerLink]="['/new-person', person.id]" title="Edit person">
+              <span class="material-symbols-outlined">edit</span>
+            </a>
+            <button class="person-card__delete" [disabled]="deletingId() === person.id"
+                    (click)="deletePerson(person.id)" title="Remove person">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+
+            <!-- Avatar -->
+            <div class="person-avatar"
+                 [style.background]="REL_COLORS[person.relationship].bg"
+                 [style.color]="REL_COLORS[person.relationship].text">
+              {{ initial(person.name) }}
+            </div>
+
+            <!-- Info -->
+            <h3 class="person-name">{{ person.name }}</h3>
+            <span class="rel-badge"
+                  [style.background]="REL_COLORS[person.relationship].bg"
+                  [style.color]="REL_COLORS[person.relationship].text">
+              {{ relLabel(person.relationship) }}
+            </span>
+
+            <!-- Contact hints -->
+            @if (person.email) {
+              <p class="person-contact">
+                <span class="material-symbols-outlined">mail</span>
+                {{ person.email }}
+              </p>
+            }
+            @if (person.phone) {
+              <p class="person-contact">
+                <span class="material-symbols-outlined">call</span>
+                {{ person.phone }}
+              </p>
+            }
+
+            <!-- Split amount for current month -->
+            <div class="person-split-row">
+              @if (splitFor(person); as sp) {
+                <div class="person-split">
+                  <span class="person-split__label">{{ periodLabel() }}</span>
+                  <span class="person-split__amount">{{ fmt(sp.amount) }}</span>
+                  <span class="person-split__count">{{ sp.expense_count }} expense{{ +sp.expense_count !== 1 ? 's' : '' }}</span>
+                </div>
+              } @else {
+                <p class="person-split__none">No shared expenses</p>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+  </main>
+</div>
