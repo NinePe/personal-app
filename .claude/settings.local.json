@@ -86,7 +86,8 @@
       "Bash(git commit -m ':*)",
       "Bash(git branch:*)",
       "Bash(git remote:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git commit -m 'Add root-level Dockerfiles for EasyPanel \\(monorepo support\\):*)"
     ]
   }
 }
