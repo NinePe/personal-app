@@ -102,7 +102,8 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:4200/)",
       "Bash(curl -s http://localhost:4200/expenses)",
       "Bash(git commit -m 'Responsive nav via shared SCSS partial — works inside Angular encapsulation:*)",
-      "Bash(git commit -m 'Fix tablet nav overlap: links wrap to second row:*)"
+      "Bash(git commit -m 'Fix tablet nav overlap: links wrap to second row:*)",
+      "Bash(git commit -m 'Fix responsive: !important overrides for nav buttons + people mobile layout:*)"
     ]
   }
 }

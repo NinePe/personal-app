@@ -1,80 +1,93 @@
 // ══════════════════════════════════════════════════════════════
 // SHARED RESPONSIVE NAV — import in each page component SCSS
 // Desktop is NOT touched.
+// !important is needed to override per-component button styles.
 // ══════════════════════════════════════════════════════════════
 
 // Tablet: nav wraps — brand+buttons on top, links below
 @media (max-width: 1024px) {
   .top-nav {
-    flex-wrap: wrap;
-    gap: .5rem;
-    padding: .75rem 1.25rem;
+    flex-wrap: wrap !important;
+    gap: .5rem !important;
+    padding: .75rem 1.25rem !important;
   }
   .nav-left {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    flex: 1;
-    min-width: 0;
+    display: flex !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    flex: 1 !important;
+    min-width: 0 !important;
   }
-  .nav-brand { font-size: 1rem; flex-shrink: 0; }
+  .nav-brand { font-size: 1rem !important; flex-shrink: 0 !important; }
   .nav-links {
-    order: 3;
-    width: 100%;
-    display: flex;
-    overflow-x: auto;
+    order: 3 !important;
+    width: 100% !important;
+    display: flex !important;
+    overflow-x: auto !important;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    gap: .5rem;
-    padding-top: .5rem;
-    border-top: 1px solid rgba(0,0,0,.05);
+    gap: .5rem !important;
+    padding-top: .5rem !important;
+    border-top: 1px solid rgba(0,0,0,.05) !important;
     &::-webkit-scrollbar { display: none; }
   }
   .nav-link {
-    white-space: nowrap;
-    flex-shrink: 0;
-    font-size: .78rem;
-    padding: .3rem .5rem;
-    border-radius: 999px;
-    border: 1px solid rgba(0,0,0,.06);
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    font-size: .78rem !important;
+    padding: .3rem .5rem !important;
+    border-radius: 999px !important;
+    border: 1px solid rgba(0,0,0,.06) !important;
+    border-bottom: 1px solid rgba(0,0,0,.06) !important;
   }
   .nav-link--active {
-    border-color: currentColor;
-    background: rgba(0,0,0,.04);
+    border-color: currentColor !important;
+    background: rgba(0,0,0,.04) !important;
   }
-  .nav-right { flex-shrink: 0; gap: .5rem; }
-  .nav-icon { display: none; }
+  .nav-right { flex-shrink: 0 !important; gap: .5rem !important; }
+  .nav-icon { display: none !important; }
 
   // Collapse button text — show only icon
   .btn-add-income, .btn-add-expense, .btn-add-book,
-  .btn-read-now, .btn-add-primary, .btn-primary {
-    font-size: 0; padding: .55rem; gap: 0;
-    .material-symbols-outlined { font-size: 1.2rem; }
+  .btn-read-now, .btn-add-primary, .btn-primary,
+  .btn-add-person {
+    font-size: 0 !important;
+    padding: .55rem !important;
+    gap: 0 !important;
+    .material-symbols-outlined { font-size: 1.2rem !important; }
   }
 }
 
 // Mobile: more compact
 @media (max-width: 640px) {
   .top-nav {
-    padding: .65rem 1rem;
-    gap: .4rem;
+    padding: .65rem .75rem !important;
+    gap: .4rem !important;
   }
   .nav-links {
-    gap: .35rem;
-    padding-top: .4rem;
+    gap: .3rem !important;
+    padding-top: .4rem !important;
   }
   .nav-link {
-    font-size: .7rem;
-    padding: .25rem .55rem;
+    font-size: .68rem !important;
+    padding: .2rem .5rem !important;
   }
-  .nav-right { gap: .3rem; }
-  .nav-back { width: 30px; height: 30px; }
+  .nav-right { gap: .25rem !important; }
+  .nav-back { width: 28px !important; height: 28px !important; }
+  .nav-brand { font-size: .9rem !important; }
 
   .btn-add-income, .btn-add-expense, .btn-add-book,
-  .btn-read-now, .btn-add-primary, .btn-primary {
-    padding: .45rem;
-    .material-symbols-outlined { font-size: 1.1rem; }
+  .btn-read-now, .btn-add-primary, .btn-primary,
+  .btn-add-person {
+    padding: .4rem !important;
+    .material-symbols-outlined { font-size: 1rem !important; }
   }
 
-  .main { padding: 1rem 1rem 3rem; }
+  .main { padding: .75rem .75rem 3rem !important; }
+
+  // Common layout helpers
+  .page-header { margin-bottom: 1.25rem !important; }
+  .page-title { font-size: 1.5rem !important; }
+  .page-sub { font-size: .82rem !important; }
+  .section-title { font-size: 1.1rem !important; }
 }
