@@ -20,6 +20,9 @@ const readingRouter        = require('./routes/reading');
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
+// ── Trust proxy (required behind EasyPanel/nginx/Docker) ───────
+app.set('trust proxy', 1);
+
 // ── Security headers ───────────────────────────────────────────
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'same-site' },
