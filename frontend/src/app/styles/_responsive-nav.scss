@@ -47,6 +47,12 @@
   .nav-right { flex-shrink: 0 !important; gap: .5rem !important; }
   .nav-icon { display: none !important; }
 
+  // Show action buttons always (no hover on touch devices)
+  .txn-actions, .card-actions, .tx-row__actions,
+  .row-del-btn, .cycle-edit-btn, .chip-actions {
+    opacity: 1 !important;
+  }
+
   // Collapse button text — show only icon
   .btn-add-income, .btn-add-expense, .btn-add-book,
   .btn-read-now, .btn-add-primary, .btn-primary,
