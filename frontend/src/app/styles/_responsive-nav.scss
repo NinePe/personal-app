@@ -10,15 +10,38 @@
     flex-wrap: wrap !important;
     gap: .5rem !important;
     padding: .75rem 1.25rem !important;
+    height: auto !important;
+    /* Fix fixed height blowout */
+    min-height: 72px !important;
+    position: relative !important;
   }
+
   .nav-left {
     display: flex !important;
     align-items: center !important;
+    flex-wrap: wrap !important;
+    /* Allow links to drop */
     gap: 1rem !important;
     flex: 1 !important;
+    width: 100% !important;
     min-width: 0 !important;
   }
-  .nav-brand { font-size: 1rem !important; flex-shrink: 0 !important; }
+
+  .nav-brand {
+    font-size: 1rem !important;
+    flex-shrink: 0 !important;
+    margin-right: auto !important;
+  }
+
+  /* Absolute position right buttons to keep them on top row visually */
+  .nav-right {
+    position: absolute !important;
+    right: 1.25rem !important;
+    top: 0.75rem !important;
+    flex-shrink: 0 !important;
+    gap: .5rem !important;
+  }
+
   .nav-links {
     order: 3 !important;
     width: 100% !important;
@@ -28,39 +51,64 @@
     -ms-overflow-style: none;
     gap: .5rem !important;
     padding-top: .5rem !important;
-    border-top: 1px solid rgba(0,0,0,.05) !important;
-    &::-webkit-scrollbar { display: none; }
+    border-top: 1px solid rgba(0, 0, 0, .05) !important;
+    margin-top: 0.25rem !important;
+
+    /* give visual space between title and links */
+    &::-webkit-scrollbar {
+      display: none;
+    }
   }
+
   .nav-link {
     white-space: nowrap !important;
     flex-shrink: 0 !important;
     font-size: .78rem !important;
     padding: .3rem .5rem !important;
     border-radius: 999px !important;
-    border: 1px solid rgba(0,0,0,.06) !important;
-    border-bottom: 1px solid rgba(0,0,0,.06) !important;
+    border: 1px solid rgba(0, 0, 0, .06) !important;
+    border-bottom: 1px solid rgba(0, 0, 0, .06) !important;
   }
+
   .nav-link--active {
     border-color: currentColor !important;
-    background: rgba(0,0,0,.04) !important;
+    background: rgba(0, 0, 0, .04) !important;
   }
-  .nav-right { flex-shrink: 0 !important; gap: .5rem !important; }
-  .nav-icon { display: none !important; }
+
+  .nav-right {
+    flex-shrink: 0 !important;
+    gap: .5rem !important;
+  }
+
+  .nav-icon {
+    display: none !important;
+  }
 
   // Show action buttons always (no hover on touch devices)
-  .txn-actions, .card-actions, .tx-row__actions,
-  .row-del-btn, .cycle-edit-btn, .chip-actions {
+  .txn-actions,
+  .card-actions,
+  .tx-row__actions,
+  .row-del-btn,
+  .cycle-edit-btn,
+  .chip-actions {
     opacity: 1 !important;
   }
 
   // Collapse button text — show only icon
-  .btn-add-income, .btn-add-expense, .btn-add-book,
-  .btn-read-now, .btn-add-primary, .btn-primary,
+  .btn-add-income,
+  .btn-add-expense,
+  .btn-add-book,
+  .btn-read-now,
+  .btn-add-primary,
+  .btn-primary,
   .btn-add-person {
     font-size: 0 !important;
     padding: .55rem !important;
     gap: 0 !important;
-    .material-symbols-outlined { font-size: 1.2rem !important; }
+
+    .material-symbols-outlined {
+      font-size: 1.2rem !important;
+    }
   }
 }
 
@@ -70,30 +118,64 @@
     padding: .65rem .75rem !important;
     gap: .4rem !important;
   }
+
   .nav-links {
     gap: .3rem !important;
     padding-top: .4rem !important;
   }
+
   .nav-link {
     font-size: .68rem !important;
     padding: .2rem .5rem !important;
   }
-  .nav-right { gap: .25rem !important; }
-  .nav-back { width: 28px !important; height: 28px !important; }
-  .nav-brand { font-size: .9rem !important; }
 
-  .btn-add-income, .btn-add-expense, .btn-add-book,
-  .btn-read-now, .btn-add-primary, .btn-primary,
-  .btn-add-person {
-    padding: .4rem !important;
-    .material-symbols-outlined { font-size: 1rem !important; }
+  .nav-right {
+    gap: .25rem !important;
+    right: 0.75rem !important;
+    top: 0.65rem !important;
   }
 
-  .main { padding: .75rem .75rem 3rem !important; }
+  .nav-back {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  .nav-brand {
+    font-size: .9rem !important;
+  }
+
+  .btn-add-income,
+  .btn-add-expense,
+  .btn-add-book,
+  .btn-read-now,
+  .btn-add-primary,
+  .btn-primary,
+  .btn-add-person {
+    padding: .4rem !important;
+
+    .material-symbols-outlined {
+      font-size: 1rem !important;
+    }
+  }
+
+  .main {
+    padding: .75rem .75rem 3rem !important;
+  }
 
   // Common layout helpers
-  .page-header { margin-bottom: 1.25rem !important; }
-  .page-title { font-size: 1.5rem !important; }
-  .page-sub { font-size: .82rem !important; }
-  .section-title { font-size: 1.1rem !important; }
+  .page-header {
+    margin-bottom: 1.25rem !important;
+  }
+
+  .page-title {
+    font-size: 1.5rem !important;
+  }
+
+  .page-sub {
+    font-size: .82rem !important;
+  }
+
+  .section-title {
+    font-size: 1.1rem !important;
+  }
 }

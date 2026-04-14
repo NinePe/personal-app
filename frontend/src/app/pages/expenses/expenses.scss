@@ -335,12 +335,12 @@
 .txn-title {
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: .875rem; font-weight: 700; color: var(--on-surface);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  overflow-wrap: break-word;
 }
 
 .txn-meta {
   font-size: .75rem; color: var(--on-surface-var); margin-top: .15rem;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  overflow-wrap: break-word;
 }
 
 .txn-amount-col { text-align: right; flex-shrink: 0; }
