@@ -36,3 +36,39 @@ body {
 /* Global responsive rules removed — they don't penetrate Angular
    component encapsulation. Nav responsive is handled via a shared
    SCSS partial imported in each component. */
+
+@media (max-width: 640px) {
+  html, body {
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    position: relative;
+  }
+
+  app-root {
+    display: block;
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Force reduced padding on main layout elements across the app to prevent horizontal cutoff */
+  body .main, 
+  body [class*="-page"],
+  body .form-inner,
+  body .form-card,
+  body .total-card,
+  body .txn-card,
+  body .cat-card,
+  body .info-card,
+  body .split-box {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  body .content-grid,
+  body .row-grid,
+  body .cat-grid,
+  body .bottom-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
