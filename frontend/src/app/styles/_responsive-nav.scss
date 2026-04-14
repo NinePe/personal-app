@@ -12,20 +12,13 @@
     padding: .75rem 1.25rem !important;
   }
   .nav-left {
-    display: contents !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    flex: 1 !important;
+    min-width: 0 !important;
   }
-  .nav-back {
-    margin-right: -0.2rem !important;
-  }
-  .nav-brand {
-    font-size: 1rem !important; 
-    flex-shrink: 0 !important;
-    margin-right: auto !important; /* Pushes nav-right to the opposite edge */
-  }
-  .nav-right { 
-    flex-shrink: 0 !important; 
-    gap: .5rem !important; 
-  }
+  .nav-brand { font-size: 1rem !important; flex-shrink: 0 !important; }
   .nav-links {
     order: 3 !important;
     width: 100% !important;
@@ -36,7 +29,6 @@
     gap: .5rem !important;
     padding-top: .5rem !important;
     border-top: 1px solid rgba(0,0,0,.05) !important;
-    margin-top: 0.25rem !important;
     &::-webkit-scrollbar { display: none; }
   }
   .nav-link {
@@ -52,6 +44,7 @@
     border-color: currentColor !important;
     background: rgba(0,0,0,.04) !important;
   }
+  .nav-right { flex-shrink: 0 !important; gap: .5rem !important; }
   .nav-icon { display: none !important; }
 
   // Show action buttons always (no hover on touch devices)

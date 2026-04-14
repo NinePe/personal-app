@@ -51,24 +51,15 @@ body {
     overflow-x: hidden;
   }
 
-  /* Force reduced padding on main layout elements across the app to prevent horizontal cutoff */
-  body .main, 
-  body [class*="-page"],
-  body .form-inner,
-  body .form-card,
-  body .total-card,
-  body .txn-card,
-  body .cat-card,
-  body .info-card,
-  body .split-box {
-    padding-left: 1rem !important;
-    padding-right: 1rem !important;
-  }
-
-  body .content-grid,
-  body .row-grid,
-  body .cat-grid,
-  body .bottom-grid {
+  /* The core bug: CSS Grid defaults missing min-width: 0, causing columns to stretch on load! */
+  body .content-grid {
     grid-template-columns: 1fr !important;
+  }
+  
+  body .content-grid > *,
+  body .col-left,
+  body .col-right,
+  body .row-grid > * {
+    min-width: 0 !important;
   }
 }
