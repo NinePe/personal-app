@@ -1,0 +1,126 @@
+<div class="page">
+  <div class="orb orb--tr"></div>
+
+  <main class="main">
+    <header class="library-header">
+      <h1 class="page-title">My Library</h1>
+      <p class="page-sub">All your movies and TV shows in one place.</p>
+    </header>
+
+    <!-- ── Status filter tabs ────────────────────── -->
+    <div class="filter-tabs">
+      <button class="filter-tab" [class.filter-tab--active]="statusFilter() === 'all'"
+              (click)="onStatusFilter('all')">All <span class="filter-count">{{ items().length }}</span></button>
+      <button class="filter-tab" [class.filter-tab--active]="statusFilter() === 'watchlist'"
+              (click)="onStatusFilter('watchlist')">
+        <span class="material-symbols-outlined">playlist_add</span> Watchlist <span class="filter-count">{{ statusCount('watchlist') }}</span>
+      </button>
+      <button class="filter-tab" [class.filter-tab--active]="statusFilter() === 'watching'"
+              (click)="onStatusFilter('watching')">
+        <span class="material-symbols-outlined">visibility</span> Watching <span class="filter-count">{{ statusCount('watching') }}</span>
+      </button>
+      <button class="filter-tab" [class.filter-tab--active]="statusFilter() === 'watched'"
+              (click)="onStatusFilter('watched')">
+        <span class="material-symbols-outlined">check_circle</span> Watched <span class="filter-count">{{ statusCount('watched') }}</span>
+      </button>
+    </div>
+
+    <!-- ── Type filter tabs ─────────────────────── -->
+    <div class="type-tabs">
+      <button class="type-tab" [class.type-tab--active]="typeFilter() === 'all'"
+              (click)="onTypeFilter('all')">All</button>
+      <button class="type-tab" [class.type-tab--active]="typeFilter() === 'movie'"
+              (click)="onTypeFilter('movie')">Movies</button>
+      <button class="type-tab" [class.type-tab--active]="typeFilter() === 'tv'"
+              (click)="onTypeFilter('tv')">TV Series</button>
+    </div>
+
+    <!-- ── Grid ─────────────────────────────────── -->
+    @if (loading()) {
+      <div class="grid">
+        @for (_ of [1,2,3,4,5,6]; track $index) {
+          <div class="skeleton-card"></div>
+        }
+      </div>
+    } @else if (items().length) {
+      <div class="grid">
+        @for (item of items(); track item.id) {
+          <a [routerLink]="['/cinema', item.id]" class="library-card">
+            <div class="card-poster">
+              @if (item.poster_path) {
+                <img [src]="posterUrl(item.poster_path)" [alt]="item.title" loading="lazy" />
+              } @else {
+                <div class="card-placeholder">
+                  <span class="material-symbols-outlined">{{ item.media_type === 'movie' ? 'movie' : 'tv' }}</span>
+                </div>
+              }
+              <div class="card-type-badge" [class.card-type-badge--movie]="item.media_type === 'movie'"
+                   [class.card-type-badge--tv]="item.media_type === 'tv'">
+                {{ item.media_type === 'movie' ? 'Movie' : 'Series' }}
+              </div>
+            </div>
+            <div class="card-body">
+              <h4 class="card-title">{{ item.title }}</h4>
+              <div class="card-meta">
+                <span class="card-status" [class.card-status--watchlist]="item.status === 'watchlist'"
+                      [class.card-status--watching]="item.status === 'watching'"
+                      [class.card-status--watched]="item.status === 'watched'">
+                  <span class="material-symbols-outlined">
+                    {{ item.status === 'watchlist' ? 'playlist_add' : item.status === 'watching' ? 'visibility' : 'check_circle' }}
+                  </span>
+                  {{ item.status === 'watchlist' ? 'Watchlist' : item.status === 'watching' ? 'Watching' : 'Watched' }}
+                </span>
+                @if (item.rating) {
+                  <span class="card-rating">
+                    @for (s of starsArray(item.rating); track $index) {
+                      <span class="material-symbols-outlined star-icon">
+                        {{ s === 1 ? 'star' : s === 0.5 ? 'star_half' : 'star_outline' }}
+                      </span>
+                    }
+                  </span>
+                }
+              </div>
+              @if (item.genres?.length) {
+                <div class="card-genres">
+                  @for (g of (item.genres || []).slice(0, 3); track g.id) {
+                    <span class="card-genre">{{ g.name }}</span>
+                  }
+                  @if ((item.genres?.length ?? 0) > 3) {
+                    <span class="card-genre-more">+{{ (item.genres?.length ?? 0) - 3 }}</span>
+                  }
+                </div>
+              }
+              @if (item.media_type === 'movie' && item.runtime) {
+                <p class="card-info">{{ formatRuntime(item.runtime) }}</p>
+              }
+              @if (item.media_type === 'tv') {
+                <p class="card-info">
+                  {{ item.number_of_seasons || 0 }} {{ (item.number_of_seasons || 0) === 1 ? 'season' : 'seasons' }}
+                  · {{ item.number_of_episodes || 0 }} episodes
+                </p>
+              }
+            </div>
+          </a>
+        }
+      </div>
+    } @else {
+      <div class="empty-state">
+        <span class="material-symbols-outlined">{{ statusFilter() === 'all' ? 'video_library' : statusFilter() === 'watchlist' ? 'playlist_add' : statusFilter() === 'watching' ? 'visibility' : 'check_circle' }}</span>
+        <h3>
+          @if (statusFilter() === 'all') { Your library is empty }
+          @else if (statusFilter() === 'watchlist') { No items in your watchlist }
+          @else if (statusFilter() === 'watching') { Nothing you're watching right now }
+          @else { Nothing watched yet }
+        </h3>
+        <p>
+          @if (statusFilter() === 'all') { Search for movies or TV shows to add to your library. }
+          @else { Try a different filter or search for new titles. }
+        </p>
+        <a class="btn-browse" routerLink="/cinema/search">
+          <span class="material-symbols-outlined">search</span>
+          Browse titles
+        </a>
+      </div>
+    }
+  </main>
+</div>

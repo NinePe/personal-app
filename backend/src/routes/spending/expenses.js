@@ -142,6 +142,7 @@ router.get('/split-detail', async (req, res) => {
       LEFT JOIN spending.places pl ON pl.id = e.place_id
       LEFT JOIN spending.people pe ON pe.id = sp.person_id
       WHERE ${where}
+        AND COALESCE(sp.amount, e.amount * sp.percentage / 100) > 0
       ORDER BY e.transaction_date DESC, e.created_at DESC
     `, params);
     res.json(rows);

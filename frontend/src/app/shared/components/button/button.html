@@ -1,0 +1,11 @@
+<button
+  [class]="classes"
+  [disabled]="disabled"
+  (click)="btnClick.emit($event)"
+  [attr.aria-label]="icon || null"
+>
+  @if (icon) {
+    <span class="material-symbols-outlined app-btn__icon" aria-hidden="true">{{ icon }}</span>
+  }
+  <ng-content />
+</button>

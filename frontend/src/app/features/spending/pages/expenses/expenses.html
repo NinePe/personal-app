@@ -1,0 +1,274 @@
+<div class="page">
+  <div class="orb orb--tr"></div>
+  <div class="orb orb--bl"></div>
+
+  <!-- ── Main ─────────────────────────────────────── -->
+  <main class="main">
+    <div class="content-grid">
+
+      <!-- ── Left column ──────────────────────────── -->
+      <aside class="col-left">
+
+        <!-- Total card -->
+        <div class="total-card">
+          <div class="total-card__orb"></div>
+          <div class="total-card__top">
+
+            <!-- Date filter tabs -->
+            <div class="date-filters">
+              <button class="date-filter-btn" [class.active]="activeFilter() === 'month'" (click)="setFilter('month')">This Month</button>
+              <button class="date-filter-btn" [class.active]="activeFilter() === 'year'"  (click)="setFilter('year')">This Year</button>
+              <button class="date-filter-btn" [class.active]="activeFilter() === 'all'"   (click)="setFilter('all')">All Time</button>
+              <button class="date-filter-btn" [class.active]="activeFilter() === 'custom'" (click)="setFilter('custom')">Custom</button>
+            </div>
+
+            <!-- Custom date range picker -->
+            @if (activeFilter() === 'custom') {
+              <div class="custom-range">
+                <input type="date" class="date-input"
+                  [value]="customFrom()"
+                  (change)="customFrom.set($any($event.target).value)" />
+                <span class="range-sep">–</span>
+                <input type="date" class="date-input"
+                  [value]="customTo()"
+                  (change)="customTo.set($any($event.target).value)" />
+                <button class="btn-apply" (click)="applyCustom()">Apply</button>
+              </div>
+            }
+
+            <!-- Month navigation (only for "This Month" filter) -->
+            @if (activeFilter() === 'month') {
+              <div class="total-month-nav">
+                <button class="month-nav-btn" (click)="prevMonth()">
+                  <span class="material-symbols-outlined">chevron_left</span>
+                </button>
+                <span class="month-label">{{ periodLabel() }}</span>
+                <button class="month-nav-btn" [class.disabled]="!canGoNext()" (click)="nextMonth()">
+                  <span class="material-symbols-outlined">chevron_right</span>
+                </button>
+              </div>
+            }
+
+            <!-- Year navigation (only for "This Year" filter) -->
+            @if (activeFilter() === 'year') {
+              <div class="total-month-nav">
+                <button class="month-nav-btn" (click)="prevYear()">
+                  <span class="material-symbols-outlined">chevron_left</span>
+                </button>
+                <span class="month-label">{{ periodLabel() }}</span>
+                <button class="month-nav-btn" (click)="nextYear()">
+                  <span class="material-symbols-outlined">chevron_right</span>
+                </button>
+              </div>
+            }
+
+            @if (activeFilter() === 'all' || (activeFilter() === 'custom' && customFrom() && customTo())) {
+              <div class="period-label">{{ periodLabel() }}</div>
+            }
+
+            <p class="total-label">Total spending</p>
+            <h1 class="total-amount">{{ formatAmount(totalAmount()) }}</h1>
+            @if (trendPct() !== null) {
+              <div class="trend" [class.trend--down]="(trendPct() ?? 0) < 0" [class.trend--up]="(trendPct() ?? 0) > 0">
+                <span class="material-symbols-outlined">{{ (trendPct() ?? 0) < 0 ? 'trending_down' : 'trending_up' }}</span>
+                <span>{{ absTrend() }}% {{ (trendPct() ?? 0) < 0 ? 'less' : 'more' }} than last month</span>
+              </div>
+            }
+          </div>
+          <a class="btn-new-expense" routerLink="/spending">
+            <span class="material-symbols-outlined">add_circle</span>
+            New Expense
+          </a>
+        </div>
+
+        <!-- Categories card -->
+        <div class="cat-card">
+          <div class="cat-card__header">
+            <h2 class="section-title">Categories</h2>
+            <span class="material-symbols-outlined icon-muted">more_horiz</span>
+          </div>
+
+          <!-- Donut chart -->
+          <div class="donut-wrap">
+            <svg viewBox="0 0 120 120" class="donut-svg">
+              <!-- Track -->
+              <circle cx="60" cy="60" r="48" fill="none" stroke="#ebddff" stroke-width="16" />
+              <!-- Segments -->
+              @for (seg of donutSegments(); track $index) {
+                <circle
+                  cx="60" cy="60" r="48"
+                  fill="none"
+                  [attr.stroke]="seg.color"
+                  stroke-width="15"
+                  [attr.stroke-dasharray]="seg.dash + ' ' + seg.gap"
+                  [attr.stroke-dashoffset]="-seg.offset"
+                  transform="rotate(-90 60 60)"
+                />
+              }
+              @if (!donutSegments().length) {
+                <circle cx="60" cy="60" r="48" fill="none" stroke="#ebddff" stroke-width="16" />
+              }
+            </svg>
+            <div class="donut-center">
+              <span class="donut-label">Top</span>
+              <span class="donut-value">{{ topCategory() }}</span>
+            </div>
+          </div>
+
+          <!-- Legend -->
+          <div class="cat-legend">
+            @for (cat of categoriesWithPct(); track cat.name) {
+              <div class="cat-row">
+                <div class="cat-row__info">
+                  <span class="cat-dot" [style.background]="cat.chartColor"></span>
+                  <span class="cat-row__name">{{ cat.name }}</span>
+                </div>
+                <span class="cat-row__pct">{{ cat.percentage.toFixed(0) }}%</span>
+              </div>
+            }
+            @if (!categoriesWithPct().length) {
+              <p class="empty-hint">No data for this month</p>
+            }
+          </div>
+        </div>
+
+      </aside>
+
+      <!-- ── Right column ─────────────────────────── -->
+      <section class="col-right">
+        <div class="txn-card">
+          <div class="txn-card__header">
+            <div>
+              <h2 class="section-title">Transactions</h2>
+              <p class="section-sub">
+                {{ expenses().length }} total · Page {{ page() }} of {{ totalPages() }}
+              </p>
+            </div>
+          </div>
+
+          @if (loading()) {
+            <div class="loading-list">
+              @for (_ of [1,2,3,4]; track $index) {
+                <div class="skeleton-row">
+                  <div class="skeleton-icon"></div>
+                  <div class="skeleton-lines">
+                    <div class="skeleton-line skeleton-line--wide"></div>
+                    <div class="skeleton-line skeleton-line--narrow"></div>
+                  </div>
+                  <div class="skeleton-amount"></div>
+                </div>
+              }
+            </div>
+          } @else if (!expenses().length) {
+            <div class="empty-state">
+              <span class="material-symbols-outlined empty-icon">receipt_long</span>
+              <p>No expenses recorded for this period.</p>
+              <a class="btn-add-first" routerLink="/spending">Add your first expense</a>
+            </div>
+          } @else {
+            <div class="txn-list">
+              @for (exp of paginatedExpenses(); track exp.id) {
+                <div class="txn-row">
+                  <div class="txn-icon-box">
+                    <span class="material-symbols-outlined">{{ exp.category.icon || 'more_horiz' }}</span>
+                  </div>
+                  <div class="txn-info">
+                    <h4 class="txn-title">{{ exp.description || exp.place?.name || exp.category.name }}</h4>
+                    <div class="txn-tags">
+                      <span class="txn-tag txn-tag--cat">{{ exp.category.name }}</span>
+                      @if (exp.subcategory) {
+                        <span class="txn-tag txn-tag--sub">{{ exp.subcategory.name }}</span>
+                      }
+                      @if (exp.card) {
+                        <span class="txn-tag txn-tag--card">{{ exp.card.name }} ····{{ exp.card.last_four }}</span>
+                      }
+                      <span class="txn-tag txn-tag--date">{{ formatDate(exp.transaction_date) }}</span>
+                    </div>
+                  </div>
+                  <div class="txn-amount-col">
+                    <span class="txn-amount">-{{ formatAmount(exp.amount) }}</span>
+                    @if (exp.is_split) {
+                      <span class="txn-badge txn-badge--split">Split</span>
+                    } @else if (exp.card) {
+                      <span class="txn-badge" [class.txn-badge--credit]="exp.card.type === 'credit'" [class.txn-badge--debit]="exp.card.type === 'debit'">{{ exp.card.type === 'credit' ? 'Credit' : 'Debit' }}</span>
+                    }
+                  </div>
+                  <div class="txn-actions">
+                    <a class="txn-btn txn-btn--edit" [routerLink]="['/spending', exp.id]" title="Edit">
+                      <span class="material-symbols-outlined">edit</span>
+                    </a>
+                    <button class="txn-btn txn-btn--del" (click)="deleteExpense(exp.id)" title="Delete">
+                      <span class="material-symbols-outlined">delete</span>
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Pagination -->
+            @if (totalPages() > 1) {
+              <div class="pagination">
+                <button class="page-btn" [disabled]="page() === 1" (click)="setPage(page() - 1)">
+                  <span class="material-symbols-outlined">chevron_left</span>
+                </button>
+                @for (p of pageNumbers(); track $index) {
+                  @if (p === -1) {
+                    <span class="page-ellipsis">…</span>
+                  } @else {
+                    <button class="page-btn" [class.active]="p === page()" (click)="setPage(p)">{{ p }}</button>
+                  }
+                }
+                <button class="page-btn" [disabled]="page() === totalPages()" (click)="setPage(page() + 1)">
+                  <span class="material-symbols-outlined">chevron_right</span>
+                </button>
+              </div>
+            }
+          }
+
+          <!-- AI Savings Suggestions -->
+          <div class="suggestions-card" style="margin-top: 2rem;">
+            <div class="suggestions-header">
+              <h2 class="section-title">
+                <span class="material-symbols-outlined" style="color:#a078ff;">lightbulb</span>
+                Sugerencias de Ahorro
+              </h2>
+              <button class="refresh-btn" (click)="refreshSuggestions()" title="Regenerar sugerencias">
+                <span class="material-symbols-outlined">refresh</span>
+              </button>
+            </div>
+            @if (suggestionsLoading()) {
+              <div class="skeleton skeleton--card" style="height:100px"></div>
+            } @else {
+              @for (s of spendingSuggestions(); track s.title) {
+                <div class="suggestion-item" style="margin-bottom:1rem;">
+                  <p class="suggestion-title">{{ s.title }}</p>
+                  <p class="suggestion-reason">{{ s.description }}</p>
+                  @if (s.potentialSaving) {
+                    <span class="suggestion-genre" style="background:rgba(96,208,160,0.15);color:#60d0a0;">Save ~{{ s.potentialSaving }}</span>
+                  }
+                </div>
+              }
+              @if (projection().monthly.length) {
+                <div style="margin-top:1.5rem;">
+                  <h4 style="color:rgba(200,180,230,0.7);font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.75rem;">6-Month Projection</h4>
+                  <div style="display:flex;gap:0.5rem;overflow-x:auto;">
+                    @for (m of projection().monthly; track m.month) {
+                      <div style="flex:1;min-width:80px;text-align:center;padding:0.75rem;background:rgba(255,255,255,0.03);border-radius:0.75rem;border:1px solid rgba(255,255,255,0.06);">
+                        <p style="font-size:0.65rem;color:rgba(200,180,230,0.5);margin:0;">{{ m.month }}</p>
+                        <p style="font-size:0.9rem;font-weight:700;color:#f0e8ff;margin:0.25rem 0;">S/ {{ m.estimatedSpend }}</p>
+                        <p style="font-size:0.7rem;color:#60d0a0;margin:0;">Save S/ {{ m.estimatedSave }}</p>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            }
+          </div>
+
+        </div>
+      </section>
+
+    </div>
+
+  </main>
+</div>

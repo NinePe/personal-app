@@ -19,10 +19,10 @@ const modules = [
     color: 'green',
   },
   {
-    id: 'wealth',
+    id: 'spending',
     name: 'Spending Tracker',
     icon: 'wallet',
-    route: '/expenses',
+    route: '/spending',
     status: 'Portfolio up 2.4%',
     color: 'purple',
   },

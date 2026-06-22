@@ -1,0 +1,83 @@
+<div class="page">
+  <div class="orb orb--tr"></div>
+  <div class="orb orb--bl"></div>
+
+  <main class="main">
+    <header class="page-header">
+      <div>
+        <h1 class="page-title">Gastos por Procesar</h1>
+        <p class="page-sub">Gastos enviados por WhatsApp y analizados por IA. Revisa y confirma para guardar.</p>
+      </div>
+      <span class="badge-count">{{ pending().length }} pendientes</span>
+    </header>
+
+    @if (loading()) {
+      <div class="skeleton-list">
+        @for (_ of [1,2,3]; track $index) {
+          <div class="skeleton skeleton--card" style="height:100px;margin-bottom:1rem;"></div>
+        }
+      </div>
+    } @else if (!pending().length) {
+      <div class="empty-state">
+        <span class="material-symbols-outlined empty-icon">pending_actions</span>
+        <h3>No hay gastos pendientes</h3>
+        <p>Envía un mensaje de WhatsApp con tu gasto y aparecerá aquí para que lo confirmes.</p>
+      </div>
+    } @else {
+      <div class="pending-list">
+        @for (item of pending(); track item.id) {
+          <div class="pending-card" [class.pending-card--income]="isIncome(item)">
+            <div class="pending-card__left">
+              <div class="pending-amount" [class.pending-amount--income]="isIncome(item)">{{ isIncome(item) ? '+' : '-' }}{{ fmt(item.amount) }}</div>
+              <div class="pending-meta">
+                <span class="meta-chip" [class.meta-chip--expense]="!isIncome(item)" [class.meta-chip--income]="isIncome(item)">
+                  <span class="material-symbols-outlined">{{ isIncome(item) ? 'trending_up' : 'trending_down' }}</span>
+                  {{ isIncome(item) ? 'Ingreso' : 'Gasto' }}
+                </span>
+                @if (item.transaction_date) { <span class="meta-chip meta-chip--date"><span class="material-symbols-outlined">calendar_today</span>{{ fmtDate(item.transaction_date) }}</span> }
+                @if (item.payment_method) { <span class="meta-chip meta-chip--card"><span class="material-symbols-outlined">credit_card</span>{{ item.payment_method }}</span> }
+              </div>
+            </div>
+            <div class="pending-card__body">
+              <p class="pending-desc">{{ item.description || 'Sin descripción' }}</p>
+              <div class="pending-tags">
+                @if (item.category_name) {
+                  <span class="tag tag--cat">{{ item.category_name }}</span>
+                }
+                @if (item.subcategory_name) {
+                  <span class="tag tag--sub">{{ item.subcategory_name }}</span>
+                }
+                @if (item.place_name) {
+                  <span class="tag tag--place">
+                    <span class="material-symbols-outlined">place</span>
+                    {{ item.place_name }}
+                  </span>
+                }
+                @if (item.is_split && item.split_people?.length) {
+                  <span class="tag tag--split">
+                    <span class="material-symbols-outlined">group</span>
+                    {{ item.split_people?.join(', ') }}
+                  </span>
+                }
+              </div>
+              @if (item.raw_message) {
+                <details class="raw-msg">
+                  <summary>Mensaje original</summary>
+                  <p>{{ item.raw_message }}</p>
+                </details>
+              }
+            </div>
+            <div class="pending-card__actions">
+              <button class="btn-process" (click)="process(item)" title="Procesar gasto">
+                <span class="material-symbols-outlined">check</span>
+              </button>
+              <button class="btn-ignore" (click)="ignore(item)" title="Ignorar">
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </main>
+</div>

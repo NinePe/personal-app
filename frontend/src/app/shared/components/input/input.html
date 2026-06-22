@@ -1,0 +1,33 @@
+<div class="app-input-wrap" [class.app-input-wrap--error]="!!error" [class.app-input-wrap--disabled]="_disabled">
+  @if (label) {
+    <label class="app-input-label" [attr.for]="inputId">{{ label }}</label>
+  }
+  @if (type === 'textarea') {
+    <textarea
+      class="app-input"
+      [id]="inputId"
+      [value]="value"
+      [placeholder]="placeholder"
+      [disabled]="_disabled"
+      [attr.aria-describedby]="error ? errorId : null"
+      (input)="onInput($any($event.target).value)"
+      (blur)="onTouched()"
+      rows="3"
+    ></textarea>
+  } @else {
+    <input
+      class="app-input"
+      [id]="inputId"
+      [type]="type"
+      [value]="value"
+      [placeholder]="placeholder"
+      [disabled]="_disabled"
+      [attr.aria-describedby]="error ? errorId : null"
+      (input)="onInput($any($event.target).value)"
+      (blur)="onTouched()"
+    />
+  }
+  @if (error) {
+    <p class="app-input-error" [id]="errorId">{{ error }}</p>
+  }
+</div>

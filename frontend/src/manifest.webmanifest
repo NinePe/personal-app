@@ -1,0 +1,14 @@
+{
+  "name": "Personal App",
+  "short_name": "Personal",
+  "description": "Your personal ecosystem — reading, cinema, spending, and growth tracking.",
+  "theme_color": "#68558d",
+  "background_color": "#fef7ff",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "start_url": "/",
+  "icons": [
+    { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

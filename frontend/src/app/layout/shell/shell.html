@@ -1,0 +1,52 @@
+<header class="shell-header" [class.shell-header--scrolled]="scrolled()">
+  <div class="shell-header-inner">
+    <div class="shell-header-left">
+      @if (meta().parent !== undefined) {
+        <button class="shell-back" (click)="goBack()" attr.aria-label="Go back to {{ meta().parent }}">
+          <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+        </button>
+      }
+      <div>
+        @if (meta().parent) {
+          <p class="shell-breadcrumb">{{ meta().parent }}</p>
+        }
+        <h1 class="shell-title">{{ meta().title }}</h1>
+      </div>
+    </div>
+
+    <div class="shell-header-right">
+      @for (action of meta().actions; track action.route) {
+        <button class="shell-action"
+                (click)="navigate(action.route)"
+                [attr.aria-label]="action.label">
+          <span class="material-symbols-outlined" aria-hidden="true">{{ action.icon }}</span>
+          <span class="shell-action-label">{{ action.label }}</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  @if ((meta().navItems?.length ?? 0) > 0) {
+    <nav class="shell-subnav" aria-label="Section navigation">
+      @for (item of meta().navItems; track item.route) {
+        <a class="shell-subnav-item"
+           [routerLink]="item.route"
+           routerLinkActive="shell-subnav-item--active"
+           [routerLinkActiveOptions]="{exact: item.route.split('/').length <= 2}"
+           #rla="routerLinkActive"
+           [attr.aria-current]="rla.isActive ? 'page' : null">
+          <span class="material-symbols-outlined shell-subnav-icon" aria-hidden="true">{{ item.icon }}</span>
+          <span class="shell-subnav-label">{{ item.label }}</span>
+        </a>
+      }
+    </nav>
+  }
+</header>
+
+<main class="shell-main" @pageTransition>
+  <router-outlet />
+</main>
+
+<footer class="shell-footer">
+  <p class="shell-footer__copy">&copy; Hans Villalobos</p>
+</footer>

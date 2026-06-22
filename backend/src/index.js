@@ -15,7 +15,11 @@ const spendingIncome       = require('./routes/spending/income');
 const spendingSavings      = require('./routes/spending/savings');
 const spendingLoans        = require('./routes/spending/loans');
 const spendingProjections  = require('./routes/spending/projections');
+const spendingPending      = require('./routes/spending/pending');
 const readingRouter        = require('./routes/reading');
+const suggestionsRouter    = require('./routes/suggestions');
+const cinemaRouter         = require('./routes/cinema/index');
+const cinemaSuggestions    = require('./routes/cinema/suggestions');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -62,7 +66,11 @@ app.use('/api/spending/income',     spendingIncome);
 app.use('/api/spending/savings',    spendingSavings);
 app.use('/api/spending/loans',      spendingLoans);
 app.use('/api/spending/projections', spendingProjections);
+app.use('/api/spending/pending',     spendingPending);
 app.use('/api/reading',              readingRouter);
+app.use('/api/suggestions',          suggestionsRouter);
+app.use('/api/cinema',               cinemaRouter);
+app.use('/api/cinema/suggestions',   cinemaSuggestions);
 
 // ── Global error handler ───────────────────────────────────────
 app.use((err, req, res, next) => {

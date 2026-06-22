@@ -1,0 +1,171 @@
+<div class="page">
+  <div class="orb orb--tr"></div>
+
+  <main class="main">
+    <!-- ── Search header ─────────────────────────── -->
+    <header class="search-header">
+      <h1 class="page-title">Search Movies & TV</h1>
+      <p class="page-sub">Find titles from TMDB and add them to your library.</p>
+    </header>
+
+    <!-- ── Search input ──────────────────────────── -->
+    <div class="search-box">
+      <span class="material-symbols-outlined search-box__icon">search</span>
+      <input
+        class="search-box__input"
+        type="text"
+        placeholder="Search for a movie or TV show..."
+        [value]="query()"
+        (input)="onInput($any($event.target).value)"
+        (keydown.escape)="clearSearch()"
+      />
+      @if (query()) {
+        <button class="search-box__clear" (click)="clearSearch()" title="Clear search">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      }
+      @if (searching()) {
+        <span class="search-box__spinner"></span>
+      }
+    </div>
+
+    <!-- ── Filter tabs ───────────────────────────── -->
+    @if (hasSearched()) {
+      <div class="filter-tabs">
+        <button class="filter-tab" [class.filter-tab--active]="filterType() === 'all'"
+                (click)="filterType.set('all')">All</button>
+        <button class="filter-tab" [class.filter-tab--active]="filterType() === 'movie'"
+                (click)="filterType.set('movie')">Movies</button>
+        <button class="filter-tab" [class.filter-tab--active]="filterType() === 'tv'"
+                (click)="filterType.set('tv')">TV Series</button>
+      </div>
+
+      <!-- ── Results grid ────────────────────────── -->
+      @if (filteredResults().length) {
+        <div class="results-grid">
+          @for (r of filteredResults(); track r.id + '-' + r.media_type) {
+            <div class="result-card">
+              <div class="result-poster">
+                @if (r.poster_path) {
+                  <img [src]="posterUrl(r.poster_path)" [alt]="r.title" loading="lazy" />
+                } @else {
+                  <div class="result-placeholder">
+                    <span class="material-symbols-outlined">movie</span>
+                  </div>
+                }
+                <div class="result-overlay">
+                  <button class="result-add-btn" (click)="openAddDialog(r)">
+                    <span class="material-symbols-outlined">add</span>
+                    Add
+                  </button>
+                </div>
+              </div>
+              <div class="result-info">
+                <h4 class="result-title">{{ r.title }}</h4>
+                <div class="result-meta">
+                  <span class="result-badge" [class.result-badge--movie]="r.media_type === 'movie'"
+                        [class.result-badge--tv]="r.media_type === 'tv'">
+                    {{ r.media_type === 'movie' ? 'Movie' : 'TV' }}
+                  </span>
+                  @if (r.release_date) {
+                    <span class="result-year">{{ year(r.release_date) }}</span>
+                  }
+                  @if (r.vote_average) {
+                    <span class="result-rating">{{ r.vote_average.toFixed(1) }}</span>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      } @else if (!searching()) {
+        <div class="empty-state">
+          <span class="material-symbols-outlined">search_off</span>
+          <h3>No results found</h3>
+          <p>Try a different search term or check the spelling.</p>
+        </div>
+      }
+    } @else {
+      <div class="empty-state empty-state--initial">
+        <span class="material-symbols-outlined">movie_search</span>
+        <h3>Search for titles</h3>
+        <p>Type at least 2 characters to search movies and TV shows from TMDB.</p>
+      </div>
+    }
+  </main>
+
+  <!-- ── Add dialog ─────────────────────────────── -->
+  @if (showAddDialog(); as r) {
+    <div class="dialog-backdrop" (click)="closeAddDialog()">
+      <div class="dialog" (click)="$event.stopPropagation()">
+        @if (selectedResult(); as sr) {
+          <div class="dialog-preview">
+            @if (sr.poster_path) {
+              <img class="dialog-poster" [src]="posterUrl(sr.poster_path)" [alt]="sr.title" />
+            } @else {
+              <div class="dialog-poster-placeholder">
+                <span class="material-symbols-outlined">movie</span>
+              </div>
+            }
+            <div>
+              <h2 class="dialog-title">{{ sr.title }}</h2>
+              @if (sr.release_date) {
+                <p class="dialog-year">{{ year(sr.release_date) }}</p>
+              }
+              @if (sr.overview) {
+                <p class="dialog-overview">{{ sr.overview }}</p>
+              }
+            </div>
+          </div>
+
+          <div class="dialog-section">
+            <label class="dialog-label">Status</label>
+            <div class="status-options">
+              @for (st of ['watchlist', 'watching', 'watched']; track st) {
+                <button class="status-btn"
+                        [class.status-btn--active]="addStatus() === st"
+                        (click)="setAddStatus(st)">
+                  <span class="material-symbols-outlined">
+                    {{ st === 'watchlist' ? 'playlist_add' : st === 'watching' ? 'visibility' : 'check_circle' }}
+                  </span>
+                  {{ st === 'watchlist' ? 'Watchlist' : st === 'watching' ? 'Watching' : 'Watched' }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="dialog-section">
+            <label class="dialog-label">Rating (optional)</label>
+            <div class="star-rating">
+              @for (star of [1,2,3,4,5]; track star) {
+                <button class="star-btn"
+                        [class.star-btn--filled]="star <= (hoverRating() || addRating())"
+                        (mouseenter)="hoverRating.set(star)"
+                        (mouseleave)="hoverRating.set(0)"
+                        (click)="setRating(star)">
+                  <span class="material-symbols-outlined">
+                    {{ star <= (hoverRating() || addRating()) ? 'star' : 'star_outline' }}
+                  </span>
+                </button>
+              }
+            </div>
+          </div>
+
+          @if (addError()) {
+            <p class="dialog-error">{{ addError() }}</p>
+          }
+
+          <div class="dialog-actions">
+            <button class="dialog-btn dialog-btn--cancel" (click)="closeAddDialog()">Cancel</button>
+            <button class="dialog-btn dialog-btn--confirm" (click)="confirmAdd()" [disabled]="addLoading()">
+              @if (addLoading()) {
+                <span class="spinner-sm"></span>
+              }
+              Add to Library
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

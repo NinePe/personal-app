@@ -1,0 +1,39 @@
+{
+  "root": true,
+  "ignorePatterns": ["dist/", "node_modules/", "!.eslintrc.json"],
+  "overrides": [
+    {
+      "files": ["*.ts"],
+      "extends": [
+        "eslint:recommended",
+        "plugin:@typescript-eslint/recommended",
+        "plugin:@angular/recommended"
+      ],
+      "parser": "@typescript-eslint/parser",
+      "parserOptions": {
+        "project": ["tsconfig.json"],
+        "createDefaultProgram": true
+      },
+      "plugins": ["@typescript-eslint"],
+      "rules": {
+        "@angular/component-selector": [
+          "error",
+          { "type": "element", "prefix": "app", "style": "kebab-case" }
+        ],
+        "@angular/use-injectable-provided-in": "error",
+        "@angular/prefer-signals": "warn",
+        "@angular/use-component-view-encapsulation": "off",
+        "@typescript-eslint/no-explicit-any": "warn",
+        "@typescript-eslint/no-unused-vars": [
+          "warn",
+          { "argsIgnorePattern": "^_" }
+        ]
+      }
+    },
+    {
+      "files": ["*.html"],
+      "extends": ["plugin:@angular/template/recommended"],
+      "rules": {}
+    }
+  ]
+}

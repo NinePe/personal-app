@@ -1,0 +1,149 @@
+<div class="page">
+  <div class="orb orb--tr"></div>
+
+  <main class="main">
+    @if (loading()) {
+      <div class="skeleton-hero"></div>
+    } @else if (stats(); as s) {
+      <div class="hero">
+        <div class="hero__glow"></div>
+        <h1 class="hero__title">Cinema & TV</h1>
+        <div class="hero__stats">
+          <div class="hero-stat">
+            <span class="hero-stat__val">{{ hours(s.totals.total_minutes) }}h</span>
+            <span class="hero-stat__lbl">Horas vistas</span>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat__val">{{ s.totals.watched_items }}</span>
+            <span class="hero-stat__lbl">Completados</span>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat__val">{{ s.totals.watched_episodes }}</span>
+            <span class="hero-stat__lbl">Episodios</span>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat__val">{{ s.totals.watching_items }}</span>
+            <span class="hero-stat__lbl">Viendo</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2x2">
+        <div class="card">
+          <h3>Por Género</h3>
+          @for (g of s.byGenre; track g.id) {
+            <div class="bar-row">
+              <span class="bar-label">{{ g.name }}</span>
+              <div class="bar">
+                <div class="bar-fill" [style.width]="g.count / s.byGenre[0].count * 100 + '%'"></div>
+              </div>
+              <span class="bar-val">{{ g.count }}</span>
+            </div>
+          }
+        </div>
+        <div class="card">
+          <h3>Por Tipo</h3>
+          @for (t of s.byType; track t.media_type) {
+            <div class="type-card">
+              <span class="material-symbols-outlined">{{ t.media_type === 'movie' ? 'movie' : 'tv' }}</span>
+              <span>{{ t.media_type === 'movie' ? 'Películas' : 'Series' }}</span>
+              <strong>{{ t.count }}</strong>
+            </div>
+          }
+        </div>
+        <div class="card">
+          <h3>Top Directores</h3>
+          @for (d of s.byDirector; track d.id) {
+            <div class="director-row">
+              <span class="director-avatar">{{ d.name[0] }}</span>
+              <span>{{ d.name }}</span>
+              <span class="director-count">{{ d.count }}</span>
+            </div>
+          }
+        </div>
+        <div class="card">
+          <h3>Vistos Recientemente</h3>
+          <div class="recent-grid">
+            @for (r of s.recentWatched; track r.id) {
+              <a [routerLink]="['/cinema', r.id]" class="recent-item">
+                <img [src]="r.poster_path" [alt]="r.title" />
+                <span>{{ r.title }}</span>
+              </a>
+            }
+          </div>
+        </div>
+      </div>
+
+      @if (daily().length) {
+        <div class="card chart-card">
+          <div class="chart-header">
+            <div class="period-btns">
+              @for (p of [{v:'week',l:'Semana'},{v:'month',l:'Mes'},{v:'year',l:'Año'},{v:'all',l:'Todo'}]; track p.v) {
+                <button class="period-btn" [class.period-btn--active]="period() === p.v" (click)="setPeriod(p.v)">{{ p.l }}</button>
+              }
+            </div>
+          </div>
+          <div class="chart-wrap">
+            <div class="bar-chart">
+              @for (d of daily(); track d.day) {
+                <div class="bar-col" [style.width]="barWidth()">
+                  <span class="bar-val-top">{{ dotLabel(d.total_minutes) }}</span>
+                  <div class="bar-fill" [style.height]="(d.total_minutes / maxVal() * 100) + '%'" [style.min-height]="d.total_minutes > 0 ? '6px' : '2px'"></div>
+                  <span class="bar-date">{{ fmtDate(d.day.substring(0,10)) }}</span>
+                  <span class="bar-sub">{{ d.episodes }}ep · {{ d.movies }}m</span>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- HISTORY + SUGGESTIONS (2-col) -->
+      @if (history().length || suggestions().length) {
+        <div class="bottom-grid">
+          <div class="card history-card">
+            <h3>Historial</h3>
+            <div class="history-list">
+              @for (item of history(); track item.id + item.watched_at) {
+                <a [routerLink]="['/cinema', item.id]" class="history-item">
+                  <img [src]="item.poster_path" [alt]="item.title" class="history-poster" />
+                  <div class="history-info">
+                    <span class="history-title">{{ item.title }}</span>
+                    <span class="history-meta">
+                      @if (isEpisode(item)) { S{{ item.season_number }}E{{ item.episode_number }} · }
+                      {{ fmtRuntime(item.runtime) }}
+                      @if (item.rating) { · ★ {{ item.rating }} }
+                    </span>
+                  </div>
+                  <span class="history-date">{{ fmtDate(item.watched_at.substring(0,10)) }}</span>
+                </a>
+              }
+            </div>
+            @if (totalPages() > 1) {
+              <div class="pagination">
+                <button [disabled]="historyPage() === 1" (click)="loadHistory(historyPage() - 1)">←</button>
+                <span>{{ historyPage() }}/{{ totalPages() }}</span>
+                <button [disabled]="historyPage() >= totalPages()" (click)="loadHistory(historyPage() + 1)">→</button>
+              </div>
+            }
+          </div>
+
+          @if (suggestions().length) {
+            <div class="card suggestions-card">
+              <h3><span class="material-symbols-outlined">auto_awesome</span> Sugerencias IA</h3>
+              <div class="suggestions-list">
+                @for (sg of suggestions(); track sg.title) {
+                  <div class="suggestion-item">
+                    <strong>{{ sg.title }}</strong>
+                    <span class="suggestion-badge">{{ sg.media_type === 'movie' ? 'Película' : 'Serie' }}</span>
+                    <p>{{ sg.reason }}</p>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+  </main>
+</div>

@@ -1,0 +1,20 @@
+@if (open) {
+  <div class="app-modal-backdrop" (click)="onBackdropClick($event)" role="dialog" aria-modal="true" [attr.aria-label]="title">
+    <div class="app-modal-card" #modalCard>
+      @if (title) {
+        <div class="app-modal-header">
+          <h2 class="app-modal-title">{{ title }}</h2>
+          <button class="app-modal-close" (click)="close.emit()" aria-label="Close">
+            <span class="material-symbols-outlined" aria-hidden="true">close</span>
+          </button>
+        </div>
+      }
+      <div class="app-modal-body">
+        <ng-content />
+      </div>
+      <div class="app-modal-footer">
+        <ng-content select="[modal-footer]" />
+      </div>
+    </div>
+  </div>
+}

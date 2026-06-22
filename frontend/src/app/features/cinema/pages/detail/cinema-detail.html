@@ -1,0 +1,123 @@
+<div class="page">
+  @if (loading()) {
+    <div class="skeleton-hero"></div>
+  } @else if (item(); as item) {
+    <!-- Backdrop header -->
+    <div class="detail-header" [style.background-image]="'url(' + (item.backdrop_path || item.poster_path) + ')'">
+      <div class="detail-header__overlay"></div>
+      <a class="detail-back" routerLink="/cinema/library"><span class="material-symbols-outlined">arrow_back</span></a>
+      <div class="detail-header__content">
+        <img class="detail-poster" [src]="item.poster_path" [alt]="item.title" />
+        <div class="detail-info">
+          <div class="detail-badges">
+            <span class="detail-badge">{{ item.media_type === 'movie' ? 'Película' : 'Serie' }}</span>
+            <span class="detail-badge detail-badge--status">{{ item.status === 'watchlist' ? 'Por ver' : item.status === 'watching' ? 'Viendo' : item.status === 'watched' ? 'Vista' : 'Abandonada' }}</span>
+            @if (item.release_date || item.first_air_date) { <span class="detail-badge detail-badge--year">{{ (item.release_date || item.first_air_date)?.substring(0, 4) }}</span> }
+            @if (item.runtime) { <span class="detail-badge">{{ item.runtime }} min</span> }
+            @if (item.number_of_seasons) { <span class="detail-badge">{{ item.number_of_seasons }} temp.</span> }
+          </div>
+          <h1 class="detail-title">{{ item.title }}</h1>
+          @if (item.overview) { <p class="detail-overview">{{ item.overview }}</p> }
+          <div class="detail-tags">
+            @for (g of item.genres; track g.id) { <span class="tag tag--genre">{{ g.name }}</span> }
+            @for (d of item.directors; track d.id) { <span class="tag tag--director">{{ d.name }}</span> }
+          </div>
+          <!-- Status buttons -->
+          <div class="detail-actions">
+            @for (s of ['watchlist','watching','watched','dropped']; track s) {
+              <button class="status-btn" [class.status-btn--active]="item.status === s" (click)="updateStatus(s)">{{ s === 'watchlist' ? 'Por ver' : s === 'watching' ? 'Viendo' : s === 'watched' ? 'Vista' : 'Abandonada' }}</button>
+            }
+          </div>
+          <!-- Rating -->
+          <div class="rating-row">
+            <span class="rating-label">Tu rating:</span>
+            @for (star of [1,2,3,4,5]; track star) {
+              <button class="star" [class.star--active]="(item.rating || 0) >= star" (click)="updateRating(star)"><span class="material-symbols-outlined">star</span></button>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Seasons & Episodes (TV only) -->
+    @if (isTv() && item.seasons?.length) {
+      <div class="seasons-section">
+        <h2 class="section-title">Temporadas</h2>
+        @for (season of item.seasons; track season.id) {
+          <div class="season-card">
+            <div class="season-header" (click)="toggleSeason(season.id)">
+              <div class="season-info">
+                <span class="season-num">T{{ season.season_number }}</span>
+                <span class="season-name">{{ season.name || 'Temporada ' + season.season_number }}</span>
+                <span class="season-progress">{{ season.watched_episodes }}/{{ season.episode_count }} vistos</span>
+              </div>
+              <div class="season-actions">
+                <button class="btn-watch-all" (click)="watchAll(season); $event.stopPropagation()" title="Marcar todo visto"><span class="material-symbols-outlined">done_all</span></button>
+                <span class="material-symbols-outlined season-arrow">{{ expandedSeason() === season.id ? 'expand_less' : 'expand_more' }}</span>
+              </div>
+            </div>
+            @if (expandedSeason() === season.id && season.episodes?.length) {
+              <div class="episode-list">
+                @for (ep of season.episodes; track ep.id) {
+                  <div class="episode-row" [class.episode-row--watched]="ep.watched">
+                    <button class="ep-check" (click)="toggleEpisode(ep)" [class.ep-check--done]="ep.watched">
+                      <span class="material-symbols-outlined">{{ ep.watched ? 'check_circle' : 'radio_button_unchecked' }}</span>
+                    </button>
+                    <div class="ep-info">
+                      <span class="ep-num">{{ ep.episode_number }}. {{ ep.name }}</span>
+                      <div class="ep-meta-row">
+                        @if (ep.runtime) { <span class="ep-runtime">{{ ep.runtime }} min</span> }
+                        @if (ep.watched_at) { <input class="ep-date-input" type="date" [value]="ep.watched_at.substring(0,10)" (change)="changeWatchedDate(ep, $any($event.target).value)" title="Cambiar fecha" /> }
+                        @if (ep.rating) { <span class="ep-star-rating">★ {{ ep.rating }}</span> }
+                      </div>
+                      <!-- Per-episode rating + comment -->
+                      <div class="ep-actions-row">
+                        <div class="ep-stars">
+                          @for (s of [1,2,3,4,5]; track s) {
+                            <button class="ep-star" [class.ep-star--on]="(ep.rating || 0) >= s" (click)="setEpisodeRating(ep, s)" title="{{s}} estrellas">★</button>
+                          }
+                        </div>
+                        <input class="ep-comment-input" [value]="epComment()[ep.id] || ''" (input)="setEpComment(ep.id, $any($event.target).value)" placeholder="Nota del capítulo..." (keydown.enter)="saveEpisodeComment(ep)" />
+                      </div>
+                    </div>
+                    @if (ep.air_date) { <span class="ep-date">{{ ep.air_date }}</span> }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Rated Episodes -->
+    @if (ratedEpisodes().length) {
+      <div class="rated-section">
+        <h2 class="section-title">⭐ Episodios Destacados</h2>
+        <div class="rated-list">
+          @for (ep of ratedEpisodes(); track ep.id) {
+            <div class="rated-item">
+              <div class="rated-item__header">
+                <span class="rated-item__ep">T{{ ep.season_number }}E{{ ep.episode_number }} — {{ ep.name }}</span>
+                <span class="rated-item__stars">★ {{ ep.rating }}</span>
+              </div>
+              @if (ep.comments) { <p class="rated-item__comment">{{ ep.comments }}</p> }
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Comments -->
+    <div class="comments-section">
+      <h2 class="section-title">Notas</h2>
+      <textarea class="comment-input" [value]="item.comments || ''" (input)="item.comments = $any($event.target).value" placeholder="Escribe tus comentarios..."></textarea>
+      <button class="btn-save" (click)="saveComments()">Guardar</button>
+    </div>
+
+    <!-- Delete -->
+    <div class="delete-section">
+      <button class="btn-delete" (click)="deleteItem()"><span class="material-symbols-outlined">delete</span> Eliminar de la biblioteca</button>
+    </div>
+  }
+</div>
