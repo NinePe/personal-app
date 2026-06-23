@@ -1,7 +1,11 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
-# Layer 1: install deps (cacheable)
+# Cache buster — EasyPanel passes --build-arg GIT_SHA=<commit>
+ARG GIT_SHA
+RUN echo "GIT_SHA=${GIT_SHA}"
+
+# Layer 1: install deps
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm install
 
