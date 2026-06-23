@@ -2,7 +2,6 @@ import { ApplicationConfig, isDevMode, provideBrowserGlobalErrorListeners } from
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideAnimations } from '@angular/platform-browser/animations';
-import { provideServiceWorker } from '@angular/service-worker';
 
 import { routes } from './app.routes';
 import { httpErrorInterceptor } from './core/interceptors';
@@ -13,6 +12,6 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(withInterceptors([httpErrorInterceptor])),
     provideAnimations(),
-    ...(isDevMode() ? [] : [provideServiceWorker('ngsw-worker.js')]),
+    // Service Worker disabled — causes stale cache issues after deploy
   ]
 };
