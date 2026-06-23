@@ -384,17 +384,15 @@ export class Spending implements OnInit {
           return;
         }
         const done = () => {
+          this.saving.set(false);
+          this.saved.set(true);
+          setTimeout(() => this.saved.set(false), 3000);
+          this.reset();
           cleanupPending();
-          if (this.receiptFile()) {
-            this.expensesSvc.uploadReceipt(exp.id, this.receiptFile()!).subscribe({
-              next: () => this.router.navigateByUrl('/spending/expenses'),
-              error: () => this.router.navigateByUrl('/spending/expenses'),
-            });
-          } else {
-            this.router.navigateByUrl('/spending/expenses');
-          }
         };
-        done();
+        if (this.receiptFile()) {
+          this.expensesSvc.uploadReceipt(exp.id, this.receiptFile()!).subscribe({ next: done, error: done });
+        } else { done(); }
       },
       error: (err) => { this.saving.set(false); this.errorMsg.set(err.error?.error ?? 'Error saving'); },
     });
