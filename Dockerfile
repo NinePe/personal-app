@@ -1,7 +1,7 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
-# Cache buster — EasyPanel passes --build-arg GIT_SHA=<commit>
+# Cache buster
 ARG GIT_SHA
 RUN echo "GIT_SHA=${GIT_SHA}"
 
@@ -27,5 +27,10 @@ RUN npx ng build --configuration production
 # Layer 4: serve
 FROM nginx:alpine
 COPY --from=build /app/dist/frontend/browser /usr/share/nginx/html
+
+# Replace Service Worker with self-destruct version (unregisters itself)
+RUN echo "self.addEventListener('install',function(){self.skipWaiting()});self.addEventListener('activate',function(){self.registration.unregister().then(function(){self.clients.matchAll({type:'window'}).then(function(clients){clients.forEach(function(c){c.navigate(c.url)})})})});" > /usr/share/nginx/html/ngsw-worker.js
+RUN rm -f /usr/share/nginx/html/ngsw.json /usr/share/nginx/html/safety-worker.js /usr/share/nginx/html/worker-basic.min.js
+
 COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
