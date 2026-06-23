@@ -27,9 +27,8 @@ function setCache(key, data) {
 // API Configuration
 // ════════════════════════════════════════════════════════════════
 
-const API_CONFIG_PATH = path.resolve(
-  '/Users/hansgiancarlovillaloboschavez/Fabrica/fabrica/api-config.json'
-);
+const API_CONFIG_PATH = process.env.API_CONFIG_PATH
+  || path.resolve(__dirname, '../../../../fabrica/api-config.json');
 
 let apiConfig;
 try {

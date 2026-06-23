@@ -5,7 +5,8 @@ const { err500 } = require('../../utils/errors');
 const path = require('path');
 const fs = require('fs');
 
-const API_CONFIG_PATH = path.resolve('/Users/hansgiancarlovillaloboschavez/Fabrica/fabrica/api-config.json');
+const API_CONFIG_PATH = process.env.API_CONFIG_PATH
+  || path.resolve(__dirname, '../../../../../fabrica/api-config.json');
 let apiConfig;
 try { apiConfig = JSON.parse(fs.readFileSync(API_CONFIG_PATH, 'utf-8')); } catch { apiConfig = { activeProvider: 'deepseek', providers: { deepseek: { baseUrl: 'https://api.deepseek.com', apiKeyEnv: 'DEEPSEEK_API_KEY', models: { chat: 'deepseek-chat' } } } }; }
 const activeProvider = apiConfig.providers[apiConfig.activeProvider] || apiConfig.providers.deepseek;
