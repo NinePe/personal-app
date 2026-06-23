@@ -3,7 +3,7 @@ WORKDIR /app
 
 # Layer 1: install deps (cacheable)
 COPY frontend/package.json frontend/package-lock.json ./
-RUN npm ci
+RUN npm install
 
 # Layer 2: copy source and config
 COPY frontend/src ./src
