@@ -1,6 +1,6 @@
-import { Component, OnInit, signal, computed, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
+import { RouterLink, Router, NavigationEnd } from '@angular/router';
+import { forkJoin, filter, Subscription } from 'rxjs';
 import { ExpensesService, Expense, ExpenseSummary, CategoryStat } from '@app/services/expenses.service';
 import { SuggestionsService, SpendingSuggestion, MonthlyProjection } from '@app/services/suggestions.service';
 
@@ -24,9 +24,11 @@ export type DateFilter = 'month' | 'year' | 'all' | 'custom';
   templateUrl: './expenses.html',
   styleUrl: './expenses.scss',
 })
-export class ExpensesDashboard implements OnInit {
+export class ExpensesDashboard implements OnInit, OnDestroy {
   private svc = inject(ExpensesService);
   private suggestionsSvc = inject(SuggestionsService);
+  private router = inject(Router);
+  private routerSub: Subscription | null = null;
 
   expenses    = signal<Expense[]>([]);
   summary     = signal<ExpenseSummary | null>(null);
@@ -132,7 +134,21 @@ export class ExpensesDashboard implements OnInit {
   });
 
   // ── Lifecycle ─────────────────────────────────────
-  ngOnInit() { this.load(); }
+  ngOnInit() {
+    this.load();
+    // Reload when navigating back from expense form
+    this.routerSub = this.router.events.pipe(
+      filter(e => e instanceof NavigationEnd && e.urlAfterRedirects.startsWith('/spending'))
+    ).subscribe(() => {
+      if (this.router.url.startsWith('/spending/expenses') || this.router.url === '/spending') {
+        this.load();
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    this.routerSub?.unsubscribe();
+  }
 
   setFilter(f: DateFilter) {
     this.activeFilter.set(f);
