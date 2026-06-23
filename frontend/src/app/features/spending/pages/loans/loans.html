@@ -85,7 +85,7 @@
         } @else {
           <div class="person-list">
             @for (p of filteredPeople(); track p.id) {
-              <a class="person-row" [routerLink]="['/loan-history', p.id]">
+              <a class="person-row" [routerLink]="['/spending', 'loan-history', p.id]">
                 <div class="person-row__left">
                   @if (p.avatar_url) {
                     <img class="person-avatar" [src]="p.avatar_url" [alt]="p.name" />

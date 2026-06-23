@@ -134,7 +134,7 @@
               </div>
 
               @if (monthlyStats().length > 5) {
-                <a class="btn-view-all" [routerLink]="['/payments', selectedCard()?.id, 'cycles']">
+                <a class="btn-view-all" [routerLink]="['/spending', 'payments', selectedCard()?.id, 'cycles']">
                   <span class="material-symbols-outlined">table_view</span>
                   View all {{ monthlyStats().length }} months
                   <span class="material-symbols-outlined">arrow_forward</span>
@@ -282,7 +282,7 @@
               </div>
 
               @if (cycles().length > 5) {
-                <a class="btn-view-all" [routerLink]="['/payments', selectedCard()?.id, 'cycles']">
+                <a class="btn-view-all" [routerLink]="['/spending', 'payments', selectedCard()?.id, 'cycles']">
                   <span class="material-symbols-outlined">table_view</span>
                   View all {{ cycles().length }} cycles
                   <span class="material-symbols-outlined">arrow_forward</span>

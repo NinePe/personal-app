@@ -380,7 +380,7 @@ export class Spending implements OnInit {
         if (this.isEdit()) {
           cleanupPending();
           this.saving.set(false);
-          this.router.navigateByUrl('/expenses');
+          this.router.navigateByUrl('/spending/expenses');
           return;
         }
         const done = () => { this.saving.set(false); this.saved.set(true); setTimeout(() => this.saved.set(false), 3000); this.reset(); cleanupPending(); };

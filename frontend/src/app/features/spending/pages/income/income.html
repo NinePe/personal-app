@@ -144,7 +144,7 @@
 
             <div class="income-row__amount">+{{ fmt(item.amount) }}</div>
 
-            <a class="income-row__edit" [routerLink]="['/new-income', item.id]" title="Edit">
+            <a class="income-row__edit" [routerLink]="['/spending', 'new-income', item.id]" title="Edit">
               <span class="material-symbols-outlined">edit</span>
             </a>
             <button class="income-row__del" (click)="deleteIncome(item.id)" title="Delete">

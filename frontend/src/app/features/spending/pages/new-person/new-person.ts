@@ -67,7 +67,7 @@ export class NewPerson implements OnInit {
       ? this.svc.updatePerson(this.editId()!, body)
       : this.svc.createPerson(body);
     req$.subscribe({
-      next: () => this.router.navigateByUrl('/people'),
+      next: () => this.router.navigateByUrl('/spending/people'),
       error: (e) => {
         this.errorMsg.set(e?.error?.error ?? 'Failed to save. Please try again.');
         this.saving.set(false);

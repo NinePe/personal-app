@@ -93,7 +93,7 @@ export class NewCard implements OnInit {
     }
 
     this.svc.createCard(body).subscribe({
-      next: () => this.router.navigate(['/payments']),
+      next: () => this.router.navigate(['/spending', 'payments']),
       error: (err) => {
         this.saving.set(false);
         this.errorMsg.set(err.error?.error ?? 'Error creating card');

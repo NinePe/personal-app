@@ -149,7 +149,7 @@ export class NewLoanPage implements OnInit {
     obs.subscribe({
       next: () => {
         this.saving.set(false);
-        this.router.navigate(['/loans']);
+        this.router.navigate(['/spending', 'loans']);
       },
       error: (e) => {
         this.error.set(e?.error?.error || 'Failed to save transaction');

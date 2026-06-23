@@ -117,7 +117,7 @@
                     [style.color]="categoryMeta(place.category).color">
                 {{ place.category || 'Other' }}
               </span>
-              <a class="place-card__edit" [routerLink]="['/new-place', place.id]" title="Edit">
+              <a class="place-card__edit" [routerLink]="['/spending', 'new-place', place.id]" title="Edit">
                 <span class="material-symbols-outlined">edit</span>
               </a>
               <button class="place-card__delete" (click)="deletePlace(place.id)" title="Delete">

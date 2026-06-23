@@ -68,7 +68,7 @@ export class NewPlace implements OnInit {
       ? this.placesSvc.updatePlace(this.editId()!, body)
       : this.placesSvc.createPlace(body);
     req$.subscribe({
-      next: () => this.router.navigateByUrl('/places'),
+      next: () => this.router.navigateByUrl('/spending/places'),
       error: (e) => {
         this.errorMsg.set(e?.error?.error ?? 'Failed to save. Please try again.');
         this.saving.set(false);

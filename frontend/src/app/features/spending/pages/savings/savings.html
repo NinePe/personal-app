@@ -207,7 +207,7 @@
                     Add Funds
                   </button>
                 }
-                <a class="btn-goal-edit" [routerLink]="['/new-savings', goal.id]" title="Edit">
+                <a class="btn-goal-edit" [routerLink]="['/spending', 'new-savings', goal.id]" title="Edit">
                   <span class="material-symbols-outlined">edit</span>
                 </a>
                 <button class="btn-goal-delete" (click)="deleteGoal(goal.id)" title="Delete">

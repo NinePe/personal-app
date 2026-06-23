@@ -91,7 +91,7 @@
       <div class="people-grid">
         @for (person of people(); track person.id) {
           <div class="person-card">
-            <a class="person-card__edit" [routerLink]="['/new-person', person.id]" title="Edit person">
+            <a class="person-card__edit" [routerLink]="['/spending', 'new-person', person.id]" title="Edit person">
               <span class="material-symbols-outlined">edit</span>
             </a>
             <button class="person-card__delete" [disabled]="deletingId() === person.id"

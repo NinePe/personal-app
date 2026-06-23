@@ -147,7 +147,7 @@ export class NewSavings implements OnInit {
       : this.svc.createSavingsGoal(body);
 
     req$.subscribe({
-      next: () => this.router.navigateByUrl('/savings'),
+      next: () => this.router.navigateByUrl('/spending/savings'),
       error: (e) => {
         this.errorMsg.set(e?.error?.error ?? 'Failed to save. Try again.');
         this.saving.set(false);
