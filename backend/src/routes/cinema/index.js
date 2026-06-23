@@ -267,9 +267,24 @@ router.patch('/episodes/:id', async (req, res) => {
     if (sets.length === 0) return res.status(400).json({ error: 'Nothing to update' });
     const { rows } = await db.query(`UPDATE cinema.episodes SET ${sets.join(', ')} WHERE id = $1 RETURNING *`, params);
     if (!rows[0]) return res.status(404).json({ error: 'Not found' });
-    if (watched !== undefined) {
-      await db.query(`UPDATE cinema.seasons SET watched_episodes = (SELECT COUNT(*) FROM cinema.episodes WHERE season_id = $1 AND watched = true) WHERE id = $1`, [rows[0].season_id]);
+
+    // Update season watched count
+    const { rows: [season] } = await db.query(
+      `UPDATE cinema.seasons SET watched_episodes = (SELECT COUNT(*) FROM cinema.episodes WHERE season_id = $1 AND watched = true) WHERE id = $1 RETURNING item_id`,
+      [rows[0].season_id]
+    );
+
+    // Check if ALL episodes across ALL seasons are watched → auto-promote to 'watched'
+    if (watched && season) {
+      const { rows: [check] } = await db.query(
+        `SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE watched = true)::int AS watched_count FROM cinema.episodes e JOIN cinema.seasons s ON s.id = e.season_id WHERE s.item_id = $1`,
+        [season.item_id]
+      );
+      if (check && check.total > 0 && check.total === check.watched_count) {
+        await db.query(`UPDATE cinema.items SET status = 'watched', updated_at = now() WHERE id = $1 AND status != 'watched'`, [season.item_id]);
+      }
     }
+
     res.json(rows[0]);
   } catch (err) { err500(res, err); }
 });
@@ -277,7 +292,22 @@ router.patch('/episodes/:id', async (req, res) => {
 router.patch('/seasons/:id/watch-all', async (req, res) => {
   try {
     await db.query(`UPDATE cinema.episodes SET watched = true, watched_at = now() WHERE season_id = $1 AND watched = false`, [req.params.id]);
-    await db.query(`UPDATE cinema.seasons SET watched_episodes = (SELECT COUNT(*) FROM cinema.episodes WHERE season_id = $1 AND watched = true) WHERE id = $1`, [req.params.id]);
+    const { rows: [season] } = await db.query(
+      `UPDATE cinema.seasons SET watched_episodes = (SELECT COUNT(*) FROM cinema.episodes WHERE season_id = $1 AND watched = true) WHERE id = $1 RETURNING item_id`,
+      [req.params.id]
+    );
+
+    // Check if ALL episodes across ALL seasons are now watched
+    if (season) {
+      const { rows: [check] } = await db.query(
+        `SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE watched = true)::int AS watched_count FROM cinema.episodes e JOIN cinema.seasons s ON s.id = e.season_id WHERE s.item_id = $1`,
+        [season.item_id]
+      );
+      if (check && check.total > 0 && check.total === check.watched_count) {
+        await db.query(`UPDATE cinema.items SET status = 'watched', updated_at = now() WHERE id = $1 AND status != 'watched'`, [season.item_id]);
+      }
+    }
+
     res.json({ ok: true });
   } catch (err) { err500(res, err); }
 });
