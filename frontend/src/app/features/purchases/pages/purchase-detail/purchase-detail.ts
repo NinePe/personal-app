@@ -28,6 +28,24 @@ export class PurchaseDetail implements OnInit {
   comparisonItems = computed(() => this.compare()?.items ?? []);
   maxPrice = computed(() => Math.max(...this.comparisonItems().map(i => i.price), 1));
 
+  // Template helpers (avoid < > in template which Angular misinterprets)
+  costTrendIcon = computed(() => {
+    const cur = this.item()?.cost_per_month || 0;
+    const avg = this.avgCostMonth();
+    if (!avg) return '';
+    return cur < avg ? 'trending_down' : 'trending_up';
+  });
+  costTrendPct = computed(() => {
+    const cur = this.item()?.cost_per_month || 0;
+    const avg = this.avgCostMonth();
+    if (!avg) return 0;
+    return Math.abs((cur - avg) / avg * 100);
+  });
+  costTrendLower = computed(() => (this.item()?.cost_per_month || 0) < this.avgCostMonth());
+  costTrendLabel = computed(() => this.costTrendLower() ? 'lower' : 'higher');
+  maxLongevity = computed(() => Math.max(this.avgDays() * 1.5, 1));
+  barH = (v: number, max: number) => Math.min(v / Math.max(max, 1) * 100, 100);
+
   // Chart for price vs duration
   chartPoints = computed(() => {
     const items = this.comparisonItems();

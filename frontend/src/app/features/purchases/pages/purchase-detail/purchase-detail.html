@@ -25,7 +25,7 @@
       <div class="dm">
         <div class="dm-top"><span>Current Cost per Month</span><span class="material-symbols-outlined">payments</span></div>
         <h3>S/ {{item()?.cost_per_month?.toFixed(2)||(item()?.price/3)?.toFixed(2)}}</h3>
-        @if (avgCostMonth()) {<p class="dm-trend" [class.down]="(item()?.cost_per_month||0)<avgCostMonth()"><span class="material-symbols-outlined">{{(item()?.cost_per_month||0)<avgCostMonth()?'trending_down':'trending_up'}}</span>{{Math.abs(((item()?.cost_per_month||0)-avgCostMonth())/avgCostMonth()*100).toFixed(0)}}% {{(item()?.cost_per_month||0)<avgCostMonth()?'lower':'higher'}} than average</p>}
+        @if (avgCostMonth()) {<p class="dm-trend" [class.down]="costTrendLower()"><span class="material-symbols-outlined">{{costTrendIcon()}}</span>{{costTrendPct().toFixed(0)}}% {{costTrendLabel()}} than average</p>}
       </div>
       <div class="dm">
         <div class="dm-top"><span>Previous Average Lifespan</span><span class="material-symbols-outlined">hourglass_empty</span></div>
@@ -46,7 +46,7 @@
     @if (avgCostMonth()) {
       <div class="insight">
         <div class="ins-icon"><span class="material-symbols-outlined">lightbulb</span></div>
-        <p><strong>Efficiency Insight</strong> @if((item()?.cost_per_month||0)<avgCostMonth()){Switching to this size saved you <strong>S/{{(avgCostMonth()-(item()?.cost_per_month||0)).toFixed(0)}} per month</strong> compared to the previous size.} @else {This costs <strong>S/{{((item()?.cost_per_month||0)-avgCostMonth()).toFixed(0)}} more</strong> per month than your average.}</p>
+        <p><strong>Efficiency Insight</strong> @if(costTrendLower()){Switching to this size saved you <strong>S/{{(avgCostMonth()-(item()?.cost_per_month||0)).toFixed(0)}} per month</strong> compared to the previous size.} @else {This costs <strong>S/{{((item()?.cost_per_month||0)-avgCostMonth()).toFixed(0)}} more</strong> per month than your average.}</p>
       </div>
     }
 
@@ -78,7 +78,7 @@
             <div class="lcy"><span>{{Math.round(avgDays()*1.5)}}d</span><span>{{avgDays()}}d</span><span>{{Math.round(avgDays()*.5)}}d</span><span>0d</span></div>
             <div class="lcbars">
               @for (ci of comparisonItems().slice().reverse(); track ci.id) {
-                <div class="lcb"><div class="lcbar" [class.cur]="ci.id===item()?.id" [style.height]="((ci.duration_days||0)/Math.max(avgDays()*1.5,1)*100>100?100:(ci.duration_days||0)/Math.max(avgDays()*1.5,1)*100)+'%'"></div></div>
+                <div class="lcb"><div class="lcbar" [class.cur]="ci.id===item()?.id" [style.height]="barH(ci.duration_days||0, maxLongevity())+'%'"></div></div>
               }
             </div>
           </div>
