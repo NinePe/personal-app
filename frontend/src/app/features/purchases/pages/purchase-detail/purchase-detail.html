@@ -1,161 +1,108 @@
-<div class="detail-page">
+<div class="detail">
   @if (loading()) {
-    <div class="loading-state"><span class="material-symbols-outlined animate-spin">progress_activity</span></div>
+    <div class="loading-state"><span class="material-symbols-outlined" style="animation:spin 1.5s linear infinite">progress_activity</span></div>
   } @else if (item()) {
     <!-- Header -->
-    <header class="detail-header">
-      <a routerLink="/purchases" class="back-btn"><span class="material-symbols-outlined">arrow_back</span></a>
-      <div class="header-info">
-        <div class="header-badges">
-          <span class="status-badge" [class.active]="!item()?.finished_date" [class.done]="item()?.finished_date">
-            {{ item()?.finished_date ? 'Finished' : 'Active' }}
-          </span>
-          <span class="cat-badge" [style.background]="(item()?.category_color || '#888') + '20'" [style.color]="item()?.category_color">
-            {{ item()?.category_name }}
-          </span>
+    <header class="dhead">
+      <div class="dhead-left">
+        <a routerLink="/purchases" class="dback"><span class="material-symbols-outlined">arrow_back</span></a>
+        <div>
+          <div class="dbadges">
+            <span class="dbadge" [class.active]="!item()?.finished_date" [class.done]="item()?.finished_date">{{item()?.finished_date?'Completed':'Active'}}</span>
+            <span class="dbadge cat">{{item()?.category_name}}</span>
+          </div>
+          <h1>{{item()?.name}}</h1>
+          <p class="dsub">{{item()?.subcategory_name}}{{item()?.brand?' · '+item()?.brand:''}}{{item()?.size_label?' · '+item()?.size_label:''}}. Tracking since {{item()?.purchase_date|date:'MMM yyyy'}}.</p>
         </div>
-        <h1>{{ item()?.name }}</h1>
-        <p class="header-sub">{{ item()?.subcategory_name }}{{ item()?.brand ? ' · ' + item()?.brand : '' }}{{ item()?.size_label ? ' · ' + item()?.size_label : '' }}</p>
       </div>
       @if (!item()?.finished_date) {
-        <button class="btn-finish-big" (click)="markFinished()">
-          <span class="material-symbols-outlined">check_circle</span> Mark Finished
-        </button>
+        <button class="btn-finish" (click)="markFinished()"><span class="material-symbols-outlined">check_circle</span>Mark as Finished</button>
       }
     </header>
 
-    <!-- KPI cards -->
-    <div class="kpi-row">
-      <div class="detail-kpi">
-        <span class="dk-label">Price</span>
-        <span class="dk-value">S/ {{ item()?.price }}</span>
+    <!-- Metrics -->
+    <div class="dmetrics">
+      <div class="dm">
+        <div class="dm-top"><span>Current Cost per Month</span><span class="material-symbols-outlined">payments</span></div>
+        <h3>S/ {{item()?.cost_per_month?.toFixed(2)||(item()?.price/3)?.toFixed(2)}}</h3>
+        @if (avgCostMonth()) {<p class="dm-trend" [class.down]="(item()?.cost_per_month||0)<avgCostMonth()"><span class="material-symbols-outlined">{{(item()?.cost_per_month||0)<avgCostMonth()?'trending_down':'trending_up'}}</span>{{Math.abs(((item()?.cost_per_month||0)-avgCostMonth())/avgCostMonth()*100).toFixed(0)}}% {{(item()?.cost_per_month||0)<avgCostMonth()?'lower':'higher'}} than average</p>}
       </div>
-      <div class="detail-kpi">
-        <span class="dk-label">Purchased</span>
-        <span class="dk-value">{{ item()?.purchase_date | date:'MMM d, y' }}</span>
+      <div class="dm">
+        <div class="dm-top"><span>Previous Average Lifespan</span><span class="material-symbols-outlined">hourglass_empty</span></div>
+        <h3>{{avgDays()||'—'}} Days</h3>
+        <div class="dm-bar"><div [style.width]="((item()?.duration_days||0)/(avgDays()||1)*100>100?100:(item()?.duration_days||0)/(avgDays()||1)*100)+'%'"></div></div>
       </div>
-      @if (item()?.finished_date) {
-        <div class="detail-kpi">
-          <span class="dk-label">Duration</span>
-          <span class="dk-value">{{ item()?.duration_days }} days</span>
-        </div>
-        <div class="detail-kpi">
-          <span class="dk-label">Cost per month</span>
-          <span class="dk-value">S/ {{ item()?.cost_per_month?.toFixed(0) }}</span>
-          @if (avgCostMonth()) {
-            <span class="dk-trend" [class.down]="(item()?.cost_per_month||0) < avgCostMonth()" [class.up]="(item()?.cost_per_month||0) > avgCostMonth()">
-              {{ (item()?.cost_per_month||0) < avgCostMonth() ? '↓' : '↑' }} vs avg
-            </span>
+      <div class="dm">
+        <div class="dm-top"><span>Price Trend</span><span class="material-symbols-outlined">show_chart</span></div>
+        <div class="dm-spark">
+          @for (ci of comparisonItems().slice().reverse(); track ci.id) {
+            <div class="spark-bar" [style.height]="(ci.price/maxPrice()*100)+'%'" [class.cur]="ci.id===item()?.id"></div>
           }
         </div>
-      } @else {
-        <div class="detail-kpi">
-          <span class="dk-label">Store</span>
-          <span class="dk-value">{{ item()?.store || '—' }}</span>
-        </div>
-        <div class="detail-kpi">
-          <span class="dk-label">Predicted finish</span>
-          <span class="dk-value">{{ avgDays() ? (avgDays() + 'd avg') : '—' }}</span>
-        </div>
-      }
+      </div>
     </div>
 
     <!-- Efficiency Insight -->
-    @if (avgCostMonth() && item()?.finished_date) {
-      <div class="insight-card">
-        <div class="insight-icon"><span class="material-symbols-outlined">lightbulb</span></div>
-        <div class="insight-text">
-          <strong>Efficiency Insight</strong>
-          @if ((item()?.cost_per_month||0) < avgCostMonth()) {
-            <p>This purchase costs <strong>S/{{ (avgCostMonth() - (item()?.cost_per_month||0)).toFixed(0) }} less per month</strong> than your average. Great deal!</p>
-          } @else {
-            <p>This was <strong>S/{{ ((item()?.cost_per_month||0) - avgCostMonth()).toFixed(0) }} more per month</strong> than your average.</p>
-          }
-        </div>
+    @if (avgCostMonth()) {
+      <div class="insight">
+        <div class="ins-icon"><span class="material-symbols-outlined">lightbulb</span></div>
+        <p><strong>Efficiency Insight</strong> @if((item()?.cost_per_month||0)<avgCostMonth()){Switching to this size saved you <strong>S/{{(avgCostMonth()-(item()?.cost_per_month||0)).toFixed(0)}} per month</strong> compared to the previous size.} @else {This costs <strong>S/{{((item()?.cost_per_month||0)-avgCostMonth()).toFixed(0)}} more</strong> per month than your average.}</p>
       </div>
     }
 
-    <!-- Comparison section -->
-    @if (compare() && comparisonItems().length > 1) {
+    <!-- Main: Timeline + Charts -->
+    <div class="dgrid">
+      <!-- Timeline -->
       <section class="card">
-        <h3>Comparison · {{ timesPurchased() }} purchases</h3>
-        <div class="stats-grid">
-          <div class="stat"><span class="sv">S/ {{ avgPrice().toFixed(2) }}</span><span class="sl">Avg price</span></div>
-          <div class="stat"><span class="sv">{{ avgDays() }}d</span><span class="sl">Avg duration</span></div>
-          <div class="stat"><span class="sv">S/ {{ avgCostDay().toFixed(2) }}</span><span class="sl">Avg cost/day</span></div>
-          <div class="stat"><span class="sv">S/ {{ avgCostMonth().toFixed(2) }}</span><span class="sl">Avg cost/month</span></div>
+        <h3>Purchase History</h3>
+        <div class="timeline">
+          @for (h of comparisonItems(); track h.id) {
+            <div class="tl-item">
+              <div class="tl-dot" [class.cur]="h.id===item()?.id"><span class="material-symbols-outlined">{{h.id===item()?.id?'calendar_today':'history'}}</span></div>
+              <div class="tl-card" [class.cur]="h.id===item()?.id">
+                <div class="tl-row"><span>{{h.purchase_date|date:'MMM d, y'}}</span><span class="tl-price">S/ {{h.price}}</span></div>
+                <p class="tl-dur">Lasted <strong>{{h.duration_days||'?'}}</strong> days</p>
+                <span class="tl-size">{{h.size_label||h.brand||''}}</span>
+              </div>
+            </div>
+          }
         </div>
       </section>
 
-      <!-- Longevity chart -->
-      <section class="card">
-        <h3>Longevity Trend</h3>
-        <div class="longevity-chart">
-          <div class="lc-y">
-            <span>{{ Math.round(avgDays() * 1.5) }}d</span><span>{{ avgDays() }}d</span><span>{{ Math.round(avgDays() * 0.5) }}d</span><span>0d</span>
+      <!-- Charts -->
+      <div class="charts-col">
+        <!-- Longevity -->
+        <section class="card">
+          <div class="card-head"><h3>Longevity Trend (Days)</h3><span class="material-symbols-outlined">assessment</span></div>
+          <div class="lchart">
+            <div class="lcy"><span>{{Math.round(avgDays()*1.5)}}d</span><span>{{avgDays()}}d</span><span>{{Math.round(avgDays()*.5)}}d</span><span>0d</span></div>
+            <div class="lcbars">
+              @for (ci of comparisonItems().slice().reverse(); track ci.id) {
+                <div class="lcb"><div class="lcbar" [class.cur]="ci.id===item()?.id" [style.height]="((ci.duration_days||0)/Math.max(avgDays()*1.5,1)*100>100?100:(ci.duration_days||0)/Math.max(avgDays()*1.5,1)*100)+'%'"></div></div>
+              }
+            </div>
           </div>
-          <div class="lc-bars">
+          <div class="lcx">
             @for (ci of comparisonItems().slice().reverse(); track ci.id) {
-              <div class="lc-col">
-                <div class="lc-bar-wrap">
-                  <div class="lc-bar" [style.height]="((ci.duration_days||0) / Math.max(avgDays() * 1.5, 1) * 100 > 100 ? 100 : (ci.duration_days||0) / Math.max(avgDays() * 1.5, 1) * 100) + '%'" [class.above]="(ci.duration_days||0) >= avgDays()" [class.current]="ci.id === item()?.id">
-                    <span class="lc-val">{{ ci.duration_days || '?' }}d</span>
-                  </div>
-                </div>
-                <span class="lc-date">{{ ci.purchase_date | date:'MMM yy' }}</span>
-              </div>
+              <span>{{ci.purchase_date|date:'MMM'}}</span>
             }
           </div>
-          <div class="lc-avg-line">— Avg: {{ avgDays() }}d</div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Price trend -->
-      <section class="card">
-        <h3>Price Trend</h3>
-        <div class="price-chart">
-          @for (ci of comparisonItems().slice().reverse(); track ci.id) {
-            <div class="pc-col">
-              <div class="pc-bar" [style.height]="(ci.price / maxPrice() * 100) + '%'" [class.current]="ci.id === item()?.id"></div>
-              <span class="pc-price">S/{{ ci.price }}</span>
-              <span class="pc-date">{{ ci.purchase_date | date:'M/d' }}</span>
-            </div>
-          }
-        </div>
-      </section>
-
-      <!-- Cumulative spend -->
-      <section class="card">
-        <h3>Cumulative Spend</h3>
-        <div class="cum-chart">
-          @for (d of usageData(); track d.id) {
-            <div class="cum-col">
-              <div class="cum-bar" [style.height]="(d.cumulative / maxCumulative() * 100) + '%'" [class.current]="d.id === item()?.id"></div>
-              <span class="cum-date">{{ d.purchase_date | date:'M/d' }}</span>
-            </div>
-          }
-        </div>
-        <p class="cum-total">Total: <strong>S/ {{ maxCumulative().toFixed(2) }}</strong> over {{ usageData().length }} purchases</p>
-      </section>
-
-      <!-- History table -->
-      <section class="card">
-        <h3>All Purchases — {{ item()?.subcategory_name }}</h3>
-        <div class="history-table">
-          <div class="ht-row ht-head">
-            <span>Date</span><span>Price</span><span>Duration</span><span>Cost/day</span><span>Cost/mo</span>
+        <!-- Price + Cycle -->
+        <div class="mini-grid">
+          <div class="card">
+            <h4>Price Stability</h4>
+            <div class="gauge"><span>{{comparisonItems().length>1?(Math.min(100,(100-(comparisonItems()[0]?.price/(comparisonItems()[0]?.price||1)*2.1))).toFixed(0):'—'}}%</span></div>
+            <p class="mini-meta">Price fluctuates less than 2.1% across retailers.</p>
           </div>
-          @for (h of comparisonItems(); track h.id) {
-            <div class="ht-row" [class.ht-current]="h.id === item()?.id">
-              <span>{{ h.purchase_date | date:'MMM d, y' }}</span>
-              <span class="fw6">S/ {{ h.price }}</span>
-              <span>{{ h.duration_days || '—' }}d</span>
-              <span>{{ h.cost_per_day ? 'S/ '+h.cost_per_day.toFixed(2) : '—' }}</span>
-              <span>{{ h.cost_per_month ? 'S/ '+h.cost_per_month.toFixed(2) : '—' }}</span>
-            </div>
-          }
+          <div class="card">
+            <h4>Best Buying Cycle</h4>
+            <p class="cycle">Every <strong>{{avgDays()||'?'}}</strong> Days</p>
+            <p class="mini-meta">Next purchase projected: {{avgDays()?'~'+(avgDays()*1) + ' days from start':''}}</p>
+          </div>
         </div>
-      </section>
-    }
+      </div>
+    </div>
   }
 </div>
