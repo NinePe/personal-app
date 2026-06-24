@@ -11,7 +11,7 @@
       <div class="kpi-grid">
         <div class="kpi">
           <div class="kpi-top"><div class="kpi-icon"><span class="material-symbols-outlined">payments</span></div>
-            @if (trend() !== 0) {<span class="kpi-trend" [class.up]="trend()>0" [class.down]="trend()<0"><span class="material-symbols-outlined">{{trend()>0?'trending_up':'trending_down'}}</span>{{Math.abs(trend()).toFixed(0)}}%</span>}
+            @if (trend() !== 0) {<span class="kpi-trend" [class.up]="trendUp()" [class.down]="trendDown()"><span class="material-symbols-outlined">{{trendIcon()}}</span>{{trendPct()}}%</span>}
           </div>
           <p class="kpi-label">Total spent this month</p>
           <h3 class="kpi-value">S/ {{spentMonth().toFixed(0)}}</h3>

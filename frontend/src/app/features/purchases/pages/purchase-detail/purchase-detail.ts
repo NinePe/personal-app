@@ -46,6 +46,23 @@ export class PurchaseDetail implements OnInit {
   maxLongevity = computed(() => Math.max(this.avgDays() * 1.5, 1));
   barH = (v: number, max: number) => Math.min(v / Math.max(max, 1) * 100, 100);
 
+  costPerMonthDisplay = computed(() => this.item()?.cost_per_month?.toFixed(2) || ((this.item()?.price || 0) / 3).toFixed(2));
+  gaugeValue = computed(() => {
+    const items = this.comparisonItems();
+    if (items.length < 2) return '—';
+    const latest = items[items.length - 1]?.price || 0;
+    const prev = items[items.length - 2]?.price || latest;
+    const pct = prev ? Math.min(100, 100 - Math.abs((latest - prev) / prev * 100)) : 100;
+    return pct.toFixed(0) + '%';
+  });
+  nextProjection = computed(() => {
+    const avg = this.avgDays();
+    if (!avg) return '';
+    const d = new Date(this.item()?.purchase_date || Date.now());
+    d.setDate(d.getDate() + avg);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  });
+
   // Chart for price vs duration
   chartPoints = computed(() => {
     const items = this.comparisonItems();

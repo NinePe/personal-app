@@ -24,19 +24,21 @@
     <div class="dmetrics">
       <div class="dm">
         <div class="dm-top"><span>Current Cost per Month</span><span class="material-symbols-outlined">payments</span></div>
-        <h3>S/ {{item()?.cost_per_month?.toFixed(2)||(item()?.price/3)?.toFixed(2)}}</h3>
-        @if (avgCostMonth()) {<p class="dm-trend" [class.down]="costTrendLower()"><span class="material-symbols-outlined">{{costTrendIcon()}}</span>{{costTrendPct().toFixed(0)}}% {{costTrendLabel()}} than average</p>}
+        <h3>S/ {{costPerMonthDisplay()}}</h3>
+        @if (avgCostMonth() && costTrendPct()) {
+          <p class="dm-trend" [class.down]="costTrendLower()"><span class="material-symbols-outlined">{{costTrendIcon()}}</span>{{costTrendPct().toFixed(0)}}% {{costTrendLabel()}} than average</p>
+        }
       </div>
       <div class="dm">
         <div class="dm-top"><span>Previous Average Lifespan</span><span class="material-symbols-outlined">hourglass_empty</span></div>
         <h3>{{avgDays()||'—'}} Days</h3>
-        <div class="dm-bar"><div [style.width]="((item()?.duration_days||0)/(avgDays()||1)*100>100?100:(item()?.duration_days||0)/(avgDays()||1)*100)+'%'"></div></div>
+        <div class="dm-bar"><div [style.width.%]="barH(item()?.duration_days||0, avgDays())"></div></div>
       </div>
       <div class="dm">
         <div class="dm-top"><span>Price Trend</span><span class="material-symbols-outlined">show_chart</span></div>
         <div class="dm-spark">
-          @for (ci of comparisonItems().slice().reverse(); track ci.id) {
-            <div class="spark-bar" [style.height]="(ci.price/maxPrice()*100)+'%'" [class.cur]="ci.id===item()?.id"></div>
+          @for (ci of comparisonItems().slice(-8); track ci.id) {
+            <div class="spark-bar" [style.height.%]="barH(ci.price, maxPrice())" [class.cur]="ci.id===item()?.id"></div>
           }
         </div>
       </div>
@@ -46,7 +48,9 @@
     @if (avgCostMonth()) {
       <div class="insight">
         <div class="ins-icon"><span class="material-symbols-outlined">lightbulb</span></div>
-        <p><strong>Efficiency Insight</strong> @if(costTrendLower()){Switching to this size saved you <strong>S/{{(avgCostMonth()-(item()?.cost_per_month||0)).toFixed(0)}} per month</strong> compared to the previous size.} @else {This costs <strong>S/{{((item()?.cost_per_month||0)-avgCostMonth()).toFixed(0)}} more</strong> per month than your average.}</p>
+        <p><strong>Efficiency Insight</strong>
+        @if (costTrendLower()) {Switching to this size saved you <strong>S/{{(avgCostMonth()-(item()?.cost_per_month||0)).toFixed(0)}} per month</strong> compared to the previous size.}
+        @else {This costs <strong>S/{{((item()?.cost_per_month||0)-avgCostMonth()).toFixed(0)}} more</strong> per month than your average.}</p>
       </div>
     }
 
@@ -71,35 +75,33 @@
 
       <!-- Charts -->
       <div class="charts-col">
-        <!-- Longevity -->
         <section class="card">
           <div class="card-head"><h3>Longevity Trend (Days)</h3><span class="material-symbols-outlined">assessment</span></div>
           <div class="lchart">
             <div class="lcy"><span>{{Math.round(avgDays()*1.5)}}d</span><span>{{avgDays()}}d</span><span>{{Math.round(avgDays()*.5)}}d</span><span>0d</span></div>
             <div class="lcbars">
-              @for (ci of comparisonItems().slice().reverse(); track ci.id) {
-                <div class="lcb"><div class="lcbar" [class.cur]="ci.id===item()?.id" [style.height]="barH(ci.duration_days||0, maxLongevity())+'%'"></div></div>
+              @for (ci of comparisonItems().slice(-6); track ci.id) {
+                <div class="lcb"><div class="lcbar" [class.cur]="ci.id===item()?.id" [style.height.%]="barH(ci.duration_days||0, maxLongevity())"></div></div>
               }
             </div>
           </div>
           <div class="lcx">
-            @for (ci of comparisonItems().slice().reverse(); track ci.id) {
+            @for (ci of comparisonItems().slice(-6); track ci.id) {
               <span>{{ci.purchase_date|date:'MMM'}}</span>
             }
           </div>
         </section>
 
-        <!-- Price + Cycle -->
         <div class="mini-grid">
           <div class="card">
             <h4>Price Stability</h4>
-            <div class="gauge"><span>{{comparisonItems().length>1?(Math.min(100,(100-(comparisonItems()[0]?.price/(comparisonItems()[0]?.price||1)*2.1))).toFixed(0):'—'}}%</span></div>
-            <p class="mini-meta">Price fluctuates less than 2.1% across retailers.</p>
+            <div class="gauge"><span>{{gaugeValue()}}</span></div>
+            <p class="mini-meta">Price fluctuates minimally across purchases.</p>
           </div>
           <div class="card">
             <h4>Best Buying Cycle</h4>
             <p class="cycle">Every <strong>{{avgDays()||'?'}}</strong> Days</p>
-            <p class="mini-meta">Next purchase projected: {{avgDays()?'~'+(avgDays()*1) + ' days from start':''}}</p>
+            <p class="mini-meta">Next purchase projected: {{nextProjection()||'—'}}</p>
           </div>
         </div>
       </div>

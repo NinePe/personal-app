@@ -27,6 +27,10 @@ export class PurchasesDashboard implements OnInit {
     if (!b) return 0;
     return ((a - b) / b) * 100;
   });
+  trendUp = computed(() => this.trend() > 0);
+  trendDown = computed(() => this.trend() < 0);
+  trendIcon = computed(() => this.trend() > 0 ? 'trending_up' : 'trending_down');
+  trendPct = computed(() => Math.abs(this.trend()).toFixed(0));
 
   runningOut = computed(() => this.predictions().find(p => p.type === 'running_out')?.items ?? []);
   restock = computed(() => this.predictions().find(p => p.type === 'restock')?.items ?? []);
