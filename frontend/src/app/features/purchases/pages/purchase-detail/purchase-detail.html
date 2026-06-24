@@ -1,0 +1,123 @@
+<div class="detail-page">
+  @if (loading()) {
+    <div class="loading">Loading...</div>
+  } @else if (item()) {
+    <div class="detail-header">
+      <a routerLink="/purchases" class="back-btn"><span class="material-symbols-outlined">arrow_back</span></a>
+      <div>
+        <h1>{{ item()?.name }}</h1>
+        <span class="subtitle">{{ item()?.subcategory_name }} · {{ item()?.category_name }}</span>
+      </div>
+    </div>
+
+    <div class="kpi-row">
+      <div class="detail-kpi">
+        <span class="kpi-val">S/ {{ item()?.price }}</span>
+        <span class="kpi-lab">Price</span>
+      </div>
+      <div class="detail-kpi">
+        <span class="kpi-val">{{ item()?.purchase_date | date:'MMM d' }}</span>
+        <span class="kpi-lab">Purchased</span>
+      </div>
+      @if (item()?.finished_date) {
+        <div class="detail-kpi">
+          <span class="kpi-val">{{ item()?.duration_days }}d</span>
+          <span class="kpi-lab">Duration</span>
+        </div>
+        <div class="detail-kpi">
+          <span class="kpi-val">S/ {{ item()?.cost_per_day?.toFixed(2) }}</span>
+          <span class="kpi-lab">Cost/day</span>
+        </div>
+      } @else {
+        <div class="detail-kpi">
+          <span class="kpi-val active">Active</span>
+          <span class="kpi-lab">Status</span>
+        </div>
+      }
+    </div>
+
+    @if (!item()?.finished_date) {
+      <button class="btn-finish" (click)="markFinished()">Mark as Finished</button>
+    }
+
+    <!-- Stats comparison -->
+    @if (compare() && comparisonItems().length > 1) {
+      <div class="card section">
+        <h3>Comparison ({{ timesPurchased() }} purchases)</h3>
+        <div class="stats-grid">
+          <div class="stat"><span class="sv">S/ {{ avgPrice().toFixed(2) }}</span><span class="sl">Avg price</span></div>
+          <div class="stat"><span class="sv">{{ avgDays() }}d</span><span class="sl">Avg duration</span></div>
+          <div class="stat"><span class="sv">S/ {{ avgCostDay().toFixed(2) }}</span><span class="sl">Avg cost/day</span></div>
+          <div class="stat"><span class="sv">S/ {{ avgCostMonth().toFixed(2) }}</span><span class="sl">Avg cost/month</span></div>
+        </div>
+      </div>
+
+      <!-- Price trend chart -->
+      <div class="card section">
+        <h3>Price Trend</h3>
+        <div class="simple-chart">
+          @for (ci of comparisonItems().slice().reverse(); track ci.id) {
+            <div class="chart-col">
+              <div class="chart-bar" [style.height]="(ci.price / maxPrice() * 100) + '%'" [title]="'S/ '+ci.price"></div>
+              <span class="chart-date">{{ ci.purchase_date | date:'M/d' }}</span>
+              <span class="chart-val">S/{{ ci.price }}</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Duration trend -->
+      <div class="card section">
+        <h3>Duration per Purchase</h3>
+        <div class="duration-bars">
+          @for (ci of comparisonItems().slice().reverse(); track ci.id) {
+            <div class="dur-row">
+              <span class="dur-date">{{ ci.purchase_date | date:'MMM yyyy' }}</span>
+              <div class="dur-bar-wrap">
+                <div class="dur-bar" [style.width]="((ci.duration_days || 0) / (avgDays() || 1) * 100 > 200 ? 200 : (ci.duration_days || 0) / (avgDays() || 1) * 100) + '%'" [class.above-avg]="(ci.duration_days || 0) > avgDays()">
+                </div>
+              </div>
+              <span class="dur-val">{{ ci.duration_days || '?' }}d</span>
+            </div>
+          }
+        </div>
+        <div class="avg-line-label">—— Avg: {{ avgDays() }}d</div>
+      </div>
+
+      <!-- Cumulative spend -->
+      <div class="card section">
+        <h3>Cumulative Spend</h3>
+        <div class="cumulative-chart">
+          @for (d of usageData(); track d.id) {
+            <div class="cum-col">
+              <div class="cum-bar" [style.height]="(d.cumulative / maxCumulative() * 100) + '%'"></div>
+              <span class="cum-date">{{ d.purchase_date | date:'M/d' }}</span>
+            </div>
+          }
+        </div>
+        <div class="cum-total">Total: S/ {{ maxCumulative().toFixed(2) }} over {{ usageData().length }} purchases</div>
+      </div>
+    }
+
+    <!-- Purchase history table -->
+    @if (comparisonItems().length) {
+      <div class="card section">
+        <h3>All Purchases — {{ item()?.subcategory_name }}</h3>
+        <div class="history-table">
+          <div class="ht-row ht-head">
+            <span>Date</span><span>Price</span><span>Duration</span><span>Cost/day</span><span>Cost/mo</span>
+          </div>
+          @for (h of comparisonItems(); track h.id) {
+            <div class="ht-row" [class.current]="h.id === item()?.id">
+              <span>{{ h.purchase_date | date:'MMM d, y' }}</span>
+              <span>S/ {{ h.price }}</span>
+              <span>{{ h.duration_days || '—' }}d</span>
+              <span>{{ h.cost_per_day ? 'S/ '+h.cost_per_day.toFixed(2) : '—' }}</span>
+              <span>{{ h.cost_per_month ? 'S/ '+h.cost_per_month.toFixed(2) : '—' }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  }
+</div>

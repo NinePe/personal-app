@@ -1,0 +1,47 @@
+.detail-page { max-width: 700px; margin: 0 auto; padding: 20px; }
+.loading { text-align: center; padding: 60px; color: #999; }
+.detail-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px; }
+.detail-header h1 { font-size: 1.3rem; color: #f0e8ff; margin: 0; }
+.subtitle { font-size: 0.8rem; color: #888; }
+.back-btn { color: #888; text-decoration: none; margin-top: 3px; }
+.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+.detail-kpi { background: #1e1e2e; border-radius: 12px; padding: 14px; text-align: center; }
+.kpi-val { display: block; font-size: 1.2rem; font-weight: 700; color: #f0e8ff; }
+.kpi-val.active { color: #ffb347; }
+.kpi-lab { font-size: 0.7rem; color: #777; }
+.btn-finish { display: block; width: 100%; padding: 12px; border-radius: 12px; border: 2px solid #60d090; background: none; color: #60d090; font-weight: 700; cursor: pointer; margin-bottom: 16px; }
+.btn-finish:hover { background: #60d090; color: #000; }
+.card { background: #1a1a2e; border-radius: 16px; padding: 20px; }
+.section { margin-bottom: 16px; }
+.section h3 { margin: 0 0 14px; font-size: 0.95rem; color: #ccc; }
+
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.stat { text-align: center; }
+.sv { display: block; font-weight: 700; color: #f0e8ff; }
+.sl { font-size: 0.7rem; color: #888; }
+
+.simple-chart { display: flex; align-items: flex-end; gap: 10px; height: 120px; padding-bottom: 36px; }
+.chart-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; }
+.chart-bar { width: 100%; max-width: 40px; background: #a078ff; border-radius: 4px 4px 0 0; min-height: 2px; }
+.chart-date { font-size: 0.6rem; color: #666; margin-top: 4px; }
+.chart-val { font-size: 0.6rem; color: #999; }
+
+.duration-bars { display: flex; flex-direction: column; gap: 8px; }
+.dur-row { display: flex; align-items: center; gap: 8px; }
+.dur-date { width: 70px; font-size: 0.7rem; color: #888; text-align: right; }
+.dur-bar-wrap { flex: 1; height: 8px; background: #1e1e2e; border-radius: 4px; overflow: hidden; }
+.dur-bar { height: 100%; background: #a078ff; border-radius: 4px; min-width: 4px; }
+.dur-bar.above-avg { background: #60d090; }
+.dur-val { width: 40px; font-size: 0.75rem; color: #ccc; }
+.avg-line-label { font-size: 0.7rem; color: #60d090; margin-top: 6px; text-align: right; }
+
+.cumulative-chart { display: flex; align-items: flex-end; gap: 6px; height: 100px; padding-bottom: 20px; }
+.cum-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; }
+.cum-bar { width: 100%; max-width: 30px; background: #60d090; border-radius: 4px 4px 0 0; min-height: 2px; }
+.cum-date { font-size: 0.6rem; color: #666; margin-top: 4px; }
+.cum-total { text-align: center; font-size: 0.8rem; color: #ccc; margin-top: 8px; }
+
+.history-table { display: flex; flex-direction: column; gap: 2px; }
+.ht-row { display: grid; grid-template-columns: 1fr 0.7fr 0.8fr 0.9fr 0.9fr; gap: 8px; padding: 8px 10px; border-radius: 6px; font-size: 0.82rem; color: #ccc; }
+.ht-row.current { background: rgba(160,120,255,.1); font-weight: 600; }
+.ht-head { color: #666; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; padding-bottom: 6px; border-bottom: 1px solid #2a2a40; border-radius: 0; margin-bottom: 4px; }

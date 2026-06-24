@@ -20,6 +20,7 @@ const readingRouter        = require('./routes/reading');
 const suggestionsRouter    = require('./routes/suggestions');
 const cinemaRouter         = require('./routes/cinema/index');
 const cinemaSuggestions    = require('./routes/cinema/suggestions');
+const purchasesRouter      = require('./routes/purchases/index');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -71,6 +72,7 @@ app.use('/api/reading',              readingRouter);
 app.use('/api/suggestions',          suggestionsRouter);
 app.use('/api/cinema',               cinemaRouter);
 app.use('/api/cinema/suggestions',   cinemaSuggestions);
+app.use('/api/purchases',             purchasesRouter);
 
 // ── Global error handler ───────────────────────────────────────
 app.use((err, req, res, next) => {

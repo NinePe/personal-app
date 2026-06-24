@@ -14,6 +14,7 @@ const COLORS: Record<string, ColorTokens> = {
   rose:   { iconBg: '#f5e6ea', iconColor: '#a05070', btnBg: '#7c4a5a' },
   blue:   { iconBg: '#dbeafe', iconColor: '#2563eb', btnBg: '#1e4480' },
   teal:   { iconBg: '#d1fae5', iconColor: '#0f766e', btnBg: '#1a6b5a' },
+  amber:  { iconBg: '#fef3c7', iconColor: '#d97706', btnBg: '#92400e' },
 };
 
 @Component({

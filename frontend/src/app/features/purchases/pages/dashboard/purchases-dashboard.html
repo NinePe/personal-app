@@ -1,0 +1,143 @@
+<div class="purchases-page">
+  @if (loading()) {
+    <div class="loading">Loading...</div>
+  } @else {
+    <!-- KPIs -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <span class="kpi-value">{{ activeCount() }}</span>
+        <span class="kpi-label">Active items</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-value">S/ {{ spentMonth().toFixed(0) }}</span>
+        <span class="kpi-label">Spent this month</span>
+        @if (trend() !== 0) {
+          <span class="kpi-trend" [class.down]="trend() < 0" [class.up]="trend() > 0">
+            {{ trend() > 0 ? '↑' : '↓' }} {{ Math.abs(trend()).toFixed(0) }}%
+          </span>
+        }
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-value">{{ stats()?.totals?.finished_items ?? 0 }}</span>
+        <span class="kpi-label">Tracked to end</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-value">S/ {{ (stats()?.totals?.active_value ?? 0).toFixed(0) }}</span>
+        <span class="kpi-label">Active value</span>
+      </div>
+    </div>
+
+    <!-- Monthly chart -->
+    @if (monthly().length) {
+      <div class="card section">
+        <h3>Monthly Spending</h3>
+        <div class="bar-chart">
+          @for (m of monthly(); track m.month) {
+            <div class="bar-col">
+              <div class="bar" [style.height]="(m.total / maxMonthly() * 100) + '%'" [title]="'S/ '+m.total.toFixed(0)"></div>
+              <span class="bar-label">{{ m.month.slice(5) }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Running out alerts -->
+    @if (runningOut().length) {
+      <div class="card section alert-section">
+        <h3>⚠️ Running out soon</h3>
+        <div class="alert-list">
+          @for (item of runningOut(); track item.id) {
+            <div class="alert-row" [routerLink]="['/purchases', item.id]">
+              <span class="alert-name">{{ item.name }}</span>
+              <span class="alert-sub">{{ item.subcategory_name }} · {{ item.size_label || '' }}</span>
+              <span class="alert-days" [class.urgent]="item.days_left <= 2">{{ item.days_left }}d left</span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Restock suggestions -->
+    @if (restock().length) {
+      <div class="card section">
+        <h3>🛒 Consider restocking</h3>
+        <div class="restock-grid">
+          @for (item of restock(); track item.name) {
+            <div class="restock-chip" [routerLink]="['/purchases/new']">
+              <span>{{ item.name }}</span>
+              <small>{{ item.days_since_finished }}d ago</small>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Best value -->
+    @if (bestValue().length) {
+      <div class="card section">
+        <h3>🏆 Best value (cost/day)</h3>
+        <div class="value-list">
+          @for (item of bestValue().slice(0, 8); track item.name) {
+            <div class="value-row">
+              <span class="value-name">{{ item.name }}</span>
+              <span class="value-sub">{{ item.subcategory_name }} · {{ item.duration_days }}d</span>
+              <span class="value-cost">S/ {{ item.cost_per_day?.toFixed(2) }}/d</span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Category breakdown -->
+    @if (byCategory().length) {
+      <div class="card section">
+        <h3>By Category</h3>
+        <div class="cat-grid">
+          @for (cat of byCategory(); track cat.id) {
+            <div class="cat-card" [style.borderColor]="cat.color">
+              <span class="cat-icon material-symbols-outlined">{{ cat.icon }}</span>
+              <span class="cat-name">{{ cat.name }}</span>
+              <span class="cat-count">{{ cat.count }} items</span>
+              <span class="cat-spent">S/ {{ cat.total_spent.toFixed(0) }}</span>
+              @if (cat.avg_duration_days) {
+                <span class="cat-avg">{{ cat.avg_duration_days }}d avg</span>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Items list -->
+    <div class="card section">
+      <div class="section-header">
+        <h3>Recent Purchases</h3>
+        <div class="filter-tabs">
+          <button [class.active]="filter() === 'all'" (click)="setFilter('all')">All</button>
+          <button [class.active]="filter() === 'active'" (click)="setFilter('active')">Active</button>
+          <button [class.active]="filter() === 'finished'" (click)="setFilter('finished')">Finished</button>
+        </div>
+      </div>
+      <div class="item-list">
+        @for (item of filteredItems().slice(0, 20); track item.id) {
+          <a class="item-row" [routerLink]="['/purchases', item.id]" [style.borderLeftColor]="item.category_color">
+            <div class="item-left">
+              <span class="item-name">{{ item.name }}</span>
+              <span class="item-meta">{{ item.subcategory_name }}{{ item.brand ? ' · ' + item.brand : '' }}</span>
+            </div>
+            <div class="item-right">
+              <span class="item-price">S/ {{ item.price }}</span>
+              @if (item.finished_date) {
+                <span class="item-badge done">{{ item.duration_days }}d</span>
+              } @else {
+                <button class="item-finish" (click)="markFinished(item.id); $event.stopPropagation(); $event.preventDefault()" title="Mark finished">✓</button>
+              }
+            </div>
+          </a>
+        }
+      </div>
+      <a class="btn-add" routerLink="/purchases/new">+ New Purchase</a>
+    </div>
+  }
+</div>

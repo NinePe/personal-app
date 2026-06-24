@@ -1,0 +1,101 @@
+<div class="form-page">
+  <div class="form-header">
+    <a routerLink="/purchases" class="back-btn"><span class="material-symbols-outlined">arrow_back</span></a>
+    <h1>New Purchase</h1>
+  </div>
+
+  <div class="form-card">
+    <!-- Category -->
+    <label>Category</label>
+    <select [(ngModel)]="selectedCat" (change)="onCatChange()" class="input">
+      <option [ngValue]="null">Select category...</option>
+      @for (c of categories(); track c.id) {
+        <option [ngValue]="c">{{ c.name }}</option>
+      }
+    </select>
+
+    <!-- Subcategory -->
+    <label>Subcategory</label>
+    <div class="sub-row">
+      <select [(ngModel)]="selectedSub" class="input flex-1">
+        <option [ngValue]="null">Select subcategory...</option>
+        @for (s of filteredSubs(); track s.id) {
+          <option [ngValue]="s">{{ s.name }}</option>
+        }
+      </select>
+      <button class="btn-new-sub" (click)="showNewSub = !showNewSub">+</button>
+    </div>
+    @if (showNewSub) {
+      <div class="new-sub-row">
+        <input [(ngModel)]="newSubName" placeholder="New subcategory name" class="input flex-1" />
+        <button class="btn-save-sub" (click)="addSubcategory()">Add</button>
+      </div>
+    }
+
+    <!-- Name -->
+    <label>Item name</label>
+    <input [(ngModel)]="name" placeholder="e.g. Head &amp; Shoulders Shampoo" class="input" />
+
+    <!-- Brand + Size -->
+    <div class="two-col">
+      <div>
+        <label>Brand</label>
+        <input [(ngModel)]="brand" placeholder="e.g. P&G" class="input" />
+      </div>
+      <div>
+        <label>Size</label>
+        <input [(ngModel)]="sizeLabel" placeholder="e.g. 400ml" class="input" />
+      </div>
+    </div>
+
+    <!-- Price + Quantity + Unit -->
+    <div class="three-col">
+      <div>
+        <label>Price (S/)</label>
+        <input [(ngModel)]="price" type="number" step="0.01" min="0" placeholder="0.00" class="input" />
+      </div>
+      <div>
+        <label>Qty</label>
+        <input [(ngModel)]="quantity" type="number" step="1" min="1" class="input" />
+      </div>
+      <div>
+        <label>Unit</label>
+        <select [(ngModel)]="unit" class="input">
+          <option value="unit">unit(s)</option>
+          <option value="ml">ml</option>
+          <option value="g">g</option>
+          <option value="kg">kg</option>
+          <option value="L">L</option>
+          <option value="oz">oz</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Unit size -->
+    <label>Unit size (per item, in {{ unit }})</label>
+    <input [(ngModel)]="unitSize" type="number" placeholder="e.g. 400 for 400ml bottle" class="input" />
+
+    <!-- Store + Date -->
+    <div class="two-col">
+      <div>
+        <label>Store</label>
+        <input [(ngModel)]="store" placeholder="e.g. Wong" class="input" />
+      </div>
+      <div>
+        <label>Purchase date</label>
+        <input [(ngModel)]="purchaseDate" type="date" class="input" />
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <label>Notes</label>
+    <textarea [(ngModel)]="notes" placeholder="Any notes..." class="input" rows="2"></textarea>
+
+    @if (error()) { <div class="error-msg">{{ error() }}</div> }
+    @if (saved()) { <div class="success-msg">✓ Purchase saved!</div> }
+
+    <button class="btn-save" (click)="save()" [disabled]="saving()">
+      {{ saving() ? 'Saving...' : 'Save Purchase' }}
+    </button>
+  </div>
+</div>
