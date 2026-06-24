@@ -9,6 +9,7 @@ import { PurchasesService, PurchaseStats, PredictionGroup, PurchaseItem } from '
   styleUrl: './purchases-dashboard.scss',
 })
 export class PurchasesDashboard implements OnInit {
+  Math = Math;  // expose for template
   private svc = inject(PurchasesService);
 
   stats = signal<PurchaseStats | null>(null);
