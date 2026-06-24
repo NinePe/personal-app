@@ -10,6 +10,7 @@ import { DatePipe } from '@angular/common';
   styleUrl: './purchase-detail.scss',
 })
 export class PurchaseDetail implements OnInit {
+  Math = Math;
   private svc = inject(PurchasesService);
   private route = inject(ActivatedRoute);
 
